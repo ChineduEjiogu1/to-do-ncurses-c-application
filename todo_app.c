@@ -60,6 +60,7 @@ typedef struct Appointment
     char *time;        // Appointment time
     char *description; // Appointment description
     int day;           // Day of the month for the appointment
+    bool is_complete;  // New field to track completion status
 } Appointment;
 
 // Node structure
@@ -574,15 +575,13 @@ void add_appointment_to_calendar(Calendar *calendar, Appointment *appointment)
 
 Appointment *create_appointment(const char *time, const char *description, int day)
 {
-    // Allocate memory for the Appointment struct
-    Appointment *appointment = malloc(sizeof(Appointment));
+    Appointment *appointment = (Appointment *)malloc(sizeof(Appointment));
     if (appointment == NULL)
     {
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
 
-    // Allocate memory for the time and description strings
     appointment->time = strdup(time);
     if (appointment->time == NULL)
     {
@@ -600,92 +599,237 @@ Appointment *create_appointment(const char *time, const char *description, int d
         exit(EXIT_FAILURE);
     }
 
-    // Initialize the day field
     appointment->day = day;
+    appointment->is_complete = false;
 
     return appointment;
 }
 
+void update_appointment(Appointment *appointment, const char *new_time, const char *new_description, int new_day)
+{
+    if (appointment == NULL)
+    {
+        fprintf(stderr, "Appointment pointer is NULL\n");
+        return;
+    }
+
+    // Update time
+    if (new_time != NULL)
+    {
+        free(appointment->time);
+        appointment->time = strdup(new_time);
+        if (appointment->time == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed for new time string\n");
+        }
+    }
+
+    // Update description
+    if (new_description != NULL)
+    {
+        free(appointment->description);
+        appointment->description = strdup(new_description);
+        if (appointment->description == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed for new description string\n");
+        }
+    }
+
+    // Update day
+    if (new_day != -1) // Use -1 as a sentinel value to indicate no update
+    {
+        appointment->day = new_day;
+    }
+}
+
+void delete_appointment(Appointment *appointment)
+{
+    if (appointment == NULL)
+    {
+        fprintf(stderr, "Appointment pointer is NULL\n");
+        return;
+    }
+
+    // Free the time and description strings
+    free(appointment->time);
+    free(appointment->description);
+
+    // Free the Appointment struct itself
+    free(appointment);
+}
+
+void mark_task_as_complete(Task *task)
+{
+    if (task == NULL)
+    {
+        fprintf(stderr, "Task pointer is NULL\n");
+        return;
+    }
+
+    task->is_complete = true;
+}
+
+void mark_appointment_as_complete(Appointment *appointment)
+{
+    if (appointment == NULL)
+    {
+        fprintf(stderr, "Appointment pointer is NULL\n");
+        return;
+    }
+
+    appointment->is_complete = true;
+}
+
+#include <ncurses.h>
+
+// Function to get user input using ncurses
+void get_user_input(Task *task, Appointment *appointment)
+{
+    initscr();              // Initialize ncurses
+    noecho();               // Don't echo keyboard input
+    cbreak();               // Enable cbreak mode
+
+    // Get task description
+    echo();
+    mvprintw(1, 1, "Enter task description: ");
+    refresh();
+    getstr(task->task_description);
+
+    // Get task priority
+    mvprintw(2, 1, "Enter task priority (1-5): ");
+    refresh();
+    scanw("%d", &task->priority);
+
+    // Get task completion status
+    mvprintw(3, 1, "Is task complete? (y/n): ");
+    refresh();
+    char complete;
+    scanw(" %c", &complete);
+    task->is_complete = (complete == 'y');
+
+    // Get sub-task status
+    mvprintw(4, 1, "Is there a sub-task? (y/n): ");
+    refresh();
+    char sub_task;
+    scanw(" %c", &sub_task);
+    task->is_sub_task = (sub_task == 'y');
+
+    // Get recurring status
+    mvprintw(5, 1, "Is task recurring? (y/n): ");
+    refresh();
+    char recurring;
+    scanw(" %c", &recurring);
+    task->is_recurring = (recurring == 'y');
+
+    // Get reminder status
+    mvprintw(6, 1, "Does task have reminder? (y/n): ");
+    refresh();
+    char reminder;
+    scanw(" %c", &reminder);
+    task->have_reminder = (reminder == 'y');
+
+    // Get appointment time
+    mvprintw(7, 1, "Enter appointment time (HH:MM AM/PM): ");
+    refresh();
+    getstr(appointment->time);
+
+    // Get appointment description
+    mvprintw(8, 1, "Enter appointment description: ");
+    refresh();
+    getstr(appointment->description);
+
+    // Get appointment day
+    mvprintw(9, 1, "Enter appointment day: ");
+    refresh();
+    scanw("%d", &appointment->day);
+
+    // Get recurrence type
+    mvprintw(10, 1, "Enter recurrence type (0-6): ");
+    refresh();
+    int recurrence_type;
+    scanw("%d", &recurrence_type);
+    task->recurrence_type = (RecurrenceType) recurrence_type;
+
+    // Get reminder description
+    mvprintw(11, 1, "Enter reminder description: ");
+    refresh();
+    getstr(task->reminder_description);
+
+    noecho();               // Don't echo keyboard input
+    endwin();               // End ncurses mode
+}
+
 int main()
 {
-    // Initialize ncurses
-    initscr();
-    noecho();
-    cbreak();
-    curs_set(0);
-
     // Create a new calendar
-    Calendar *calendar = create_calendar(2025, 1, 1);
-    if (calendar == NULL)
-    {
-        printw("Failed to create calendar\n");
-    }
-    else
-    {
-        printw("Calendar created successfully\n");
-    }
+    Calendar calendar;
+    calendar.tasks = NULL;
+    calendar.appointments = NULL;
+    calendar.appointment_count = 0;
+    calendar.year = 2025;
+    calendar.month = 1;
+    calendar.day = 1;
 
     // Create a new task
-    Node *new_task = create_task("Buy groceries", false, false, false, false, 3, NULL, NONE, false, 10, 00, NULL);
-    if (new_task == NULL)
-    {
-        printw("Failed to create task\n");
-    }
-    else
-    {
-        printw("Task created successfully\n");
-    }
+    Task *task = (Task *)malloc(sizeof(Task));
+    task->task_description = (char *)malloc(100 * sizeof(char));
+    task->is_complete = false;
+    task->is_sub_task = false;
+    task->is_recurring = false;
+    task->have_reminder = false;
+    task->priority = 0;
+    task->task_notes = NULL;
+    task->task_time = NULL;
+    task->sub_task = NULL;
+    task->recurrence_type = NONE;
+    task->reminder_description = (char *)malloc(100 * sizeof(char));
+    task->appointment = NULL;
 
-    // Add the task to the calendar
-    add_task_to_calendar(calendar, new_task);
-    printw("Task added to calendar successfully\n");
+    // Create a new appointment
+    Appointment *appointment = (Appointment *)malloc(sizeof(Appointment));
+    appointment->time = (char *)malloc(100 * sizeof(char));
+    appointment->description = (char *)malloc(100 * sizeof(char));
+    appointment->day = 0;
+    appointment->is_complete = false;
 
-    // Create an appointment for the task
-    create_appointment_for_task(new_task, "10:00 AM", "Meeting with John", 5);
-    printw("Appointment created successfully\n");
+    // Get user input
+    get_user_input(task, appointment);
 
-    // Output the task
-    printw("\nTask Details:\n");
-    printw("Description: %s\n", new_task->task.task_description);
-    printw("Completed: %s\n", new_task->task.is_complete ? "Yes" : "No");
-    printw("Priority: %d\n", new_task->task.priority);
+    // Add the appointment to the task
+    task->appointment = appointment;
 
-    // Format time as HH:MM AM/PM
-    int hours = new_task->task.task_time->hours;
-    int minutes = new_task->task.task_time->minutes;
-    char time_format[10];
-    if (hours == 0)
-    {
-        sprintf(time_format, "%d:%02d AM", 12, minutes);
-    }
-    else if (hours < 12)
-    {
-        sprintf(time_format, "%d:%02d AM", hours, minutes);
-    }
-    else if (hours == 12)
-    {
-        sprintf(time_format, "%d:%02d PM", hours, minutes);
-    }
-    else
-    {
-        sprintf(time_format, "%d:%02d PM", hours - 12, minutes);
-    }
-    printw("Time: %s\n", time_format);
+    // Create a new node for the task
+    Node *node = (Node *)malloc(sizeof(Node));
+    node->task = *task; // Assign the task to the node
+    node->next = NULL;
+    node->previous = NULL;
 
-    if (new_task->task.appointment != NULL)
-    {
-        printw("Appointment Time: %s\n", new_task->task.appointment->time);
-        printw("Appointment Description: %s\n", new_task->task.appointment->description);
-    }
+    // Add the node to the calendar
+    calendar.tasks = node;
 
-    // Refresh the screen
-    refresh();
+    // Print the calendar
+    printf("Calendar for %d-%d-%d:\n", calendar.year, calendar.month, calendar.day);
+    printf("Tasks:\n");
+    printf("  - %s (Priority: %d)\n", task->task_description, task->priority);
+    printf("Appointments:\n");
+    printf("  - %s on day %d at %s\n", task->appointment->description, task->appointment->day, task->appointment->time);
 
-    // Wait for user input
-    getch();
+    // Mark the task as complete
+    task->is_complete = true;
+    printf("Task marked as complete\n");
 
-    // End ncurses mode
-    endwin();
+    // Mark the appointment as complete
+    task->appointment->is_complete = true;
+    printf("Appointment marked as complete\n");
 
-    return 0;
+    // Free allocated memory
+    free(task->appointment->time);
+    free(task->appointment->description);
+    free(task->appointment);
+    free(task->task_description);
+    free(task->reminder_description);
+    free(task);
+    free(node);
+
+    return EXIT_SUCCESS;
 }
