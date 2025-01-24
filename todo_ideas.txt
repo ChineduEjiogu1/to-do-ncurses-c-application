@@ -1,0 +1,31 @@
+t - for adding task.
+a - for adding appointment.
+a + t - for adding appointment and task.
+shift + ? - help.
+up, down, left, right arrow keys to navigate the UI.
+v to view task and calendar for detailed view.
+q - to quit program
+p + arrow keys- to move a task priority up or down.
+d - to delete task or appointment.
+x - to mark complete for both task and appointment
+u - to update task or appointment. 
+s - show diagram tree of to-dos and appointments.
+1, 2, 3, 4, 5 for none, daily, weekly, monthly, yearly.
+
+
+priority is 1-5.
+
+completion level
+----------------
+not complete
+in progress
+complete 
+
+task will be label by priority weight.
+it will add the task based on priority weight.
+
+so if it a task is added, it will be placed in the task list as 1 being at the top
+and 5 being at the bottom.
+
+todo are attached to appointments and appointments are attached to to-dos.
+
