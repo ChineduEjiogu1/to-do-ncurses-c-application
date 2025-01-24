@@ -29,3 +29,7 @@ and 5 being at the bottom.
 
 todo are attached to appointments and appointments are attached to to-dos.
 
+ask for recurrence frequency.
+
+add export and import task and appointments to a file.
+
