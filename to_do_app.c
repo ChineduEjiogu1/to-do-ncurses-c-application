@@ -5,6 +5,8 @@
 #include <stdio.h>
 
 #define MAX_YEAR 9999
+#define MAX_TASK 1000
+#define MAX_SUB_TASK 1000
 
 // Enum for recurrence types
 typedef enum
@@ -24,7 +26,7 @@ typedef enum
     complete
 } CompletionLevel;
 
-// Enum for month of a year.
+// Enum for months of a year.
 typedef enum
 {
     JANUARY,
@@ -73,11 +75,13 @@ typedef struct Appointment
     int appointment_duration; // how long appointment will last.
     struct Appointment *next;
     struct Task *task;
+    unsigned int priority; // Added priority field
 } Appointment;
 
 // Task structure
 typedef struct Task
 {
+    int task_id;                      // Id for task.
     char *task_description;           // Dynamic string for task description.
     CompletionLevel completion_level; // Task completed or not.
     bool is_sub_task;                 // Is there a sub-task or not.
@@ -134,6 +138,7 @@ char *strdup(const char *source)
     return (char *)memcpy(string, source, length);
 }
 
+// Function to add a subtask.
 void add_sub_tasks(SubTask *sub_task, Node *new_task)
 {
     if (sub_task == NULL && new_task == NULL)
@@ -163,21 +168,49 @@ void add_sub_tasks(SubTask *sub_task, Node *new_task)
 static const int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 static const int leap_days[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
+// function to calculate leap year.
 bool is_leap_year(int year)
 {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
+// Function to get days in a month, most getting the proper leap year month or not.
 int get_days_in_month(Month month, int year)
 {
-   return is_leap_year(year) ? leap_days[month - 1] : days_in_month[month - 1];
+    return is_leap_year(year) ? leap_days[month - 1] : days_in_month[month - 1];
 }
 
+// Function to get the days in a year.
 int days_in_year(int year)
 {
     return 365 + (is_leap_year(year) ? 1 : 0);
 }
 
+bool is_valid_date(int day, int month, int year)
+{
+    if (year < 1 || year > 9999)
+        return false;
+    if (month < 1 || month > 12)
+        return false;
+    if (day < 1 || day > 31)
+        return false;
+
+    if (month == 2)
+    {
+        if (is_leap_year(year))
+            return day <= 29;
+        return day <= 28;
+    }
+
+    if (month == 4 || month == 6 || month == 9 || month == 11)
+    {
+        return day <= 30;
+    }
+
+    return true;
+}
+
+// Function to create appointment node.
 AppointmentNode *create_appointment_node(Appointment *appointment)
 {
     AppointmentNode *new_node = (AppointmentNode *)malloc(sizeof(AppointmentNode));
@@ -192,6 +225,7 @@ AppointmentNode *create_appointment_node(Appointment *appointment)
     return new_node;
 }
 
+// Function to free appointment node.
 void free_appointment_node(AppointmentNode *node)
 {
     if (node != NULL)
@@ -200,6 +234,7 @@ void free_appointment_node(AppointmentNode *node)
     }
 }
 
+// Fuction to allocate string, helper function.
 char *allocate_string(const char *string)
 {
     if (string == NULL)
@@ -218,6 +253,7 @@ char *allocate_string(const char *string)
     return allocated_string;
 }
 
+// Function to allocate time, helper function.
 Time *allocate_time(Time *source)
 {
     if (source == NULL)
@@ -238,15 +274,17 @@ Time *allocate_time(Time *source)
     return allocated_time;
 }
 
-void free_time(Time* time_ptr) 
+// Function to free allocated time.
+void free_time(Time *time_ptr)
 {
-    if (time_ptr != NULL) 
+    if (time_ptr != NULL)
     {
         free(time_ptr);
         time_ptr = NULL;
     }
 }
 
+// Function to allocate notes, helper function.
 Notes *allocate_notes(const char *description)
 {
     if (description == NULL)
@@ -267,6 +305,7 @@ Notes *allocate_notes(const char *description)
     return allocated_notes;
 }
 
+// Function to create task.
 Task *create_task(const char *task_description, CompletionLevel completion_level, bool is_subtask, bool is_recurring, bool have_reminder,
                   unsigned int priority, RecurrenceType recurrence_type, Time *minutes, Time *hours, const char *notes_description,
                   const char *reminder_description, SubTask *sub_task)
@@ -290,35 +329,95 @@ Task *create_task(const char *task_description, CompletionLevel completion_level
     new_task->task_description = allocate_string(task_description);
     new_task->task_notes = allocate_notes(notes_description);
     new_task->reminder_description = allocate_string(reminder_description);
-    
+
     return new_task;
 }
 
-void add_task(Task **task, const char *task_description, CompletionLevel completion_level, bool is_subtask, bool is_recurring, bool have_reminder,
-              unsigned int priority, RecurrenceType recurrence_type, Time *minutes, Time *hours, const char *notes_description,
-              const char *reminder_description, SubTask *sub_task)
+// Function to free task if deleted.
+void free_task(Task *task)
 {
-    if (task == NULL)
+    if (!task)
     {
         return;
     }
 
-    *task = create_task(task_description, completion_level, is_subtask, is_recurring, have_reminder,
-                        priority, recurrence_type, minutes, hours, notes_description,
-                        reminder_description, sub_task);
-
-    if (*task == NULL)
+    // Free task description
+    free(task->task_description);
+    if (task->task_notes)
     {
-        fprintf(stderr, "Failed to create task\n");
+        free(task->task_notes->notes_description);
+        free(task->task_notes);
     }
+
+    free(task->task_time);
+    free(task->reminder_description);
+
+    // Free up sub-tasks
+    while (task->sub_task)
+    {
+        SubTask *next = task->sub_task->next;
+        free(task->sub_task);
+        task->sub_task = next;
+    }
+
+    // Free the task itself
+    free(task);
 }
 
-Task* update_task(const char* task_description, CompletionLevel completion_level, bool is_subtask, bool is_recurring, bool have_reminder,
-                  unsigned int priority, RecurrenceType recurrence_type, Time* minutes, Time* hours, const char* notes_description,
-                  const char* reminder_description, SubTask* sub_task)
+// Function to add task.
+bool add_task(Calendar *calendar, const char *task_description, CompletionLevel completion_level, bool is_subtask, bool is_recurring, bool have_reminder,
+              unsigned int priority, RecurrenceType recurrence_type, Time *minutes, Time *hours, const char *notes_description,
+              const char *reminder_description, SubTask *sub_task)
 {
-    Task* update_task = malloc(sizeof(Task));
-    if (update_task == NULL) {
+    if (!calendar)
+        return false;
+
+    Task *new_task = create_task(task_description, completion_level, is_subtask, is_recurring, have_reminder,
+                                 priority, recurrence_type, minutes, hours, notes_description,
+                                 reminder_description, sub_task);
+
+    if (!new_task)
+    {
+        fprintf(stderr, "Failed to create task\n");
+        return false;
+    }
+
+    Node *new_node = (Node *)malloc(sizeof(Node));
+    if (!new_node)
+    {
+        free_task(new_task);
+        fprintf(stderr, "Memory allocation failed for new node\n");
+        return false;
+    }
+
+    new_node->task = *new_task;
+    new_node->next = NULL;
+    new_node->previous = calendar->tasks ? calendar->tasks->tail : NULL;
+
+    if (!calendar->tasks)
+    {
+        calendar->tasks = new_node;
+        calendar->tasks->head = calendar->tasks;
+        calendar->tasks->tail = calendar->tasks;
+    }
+    else
+    {
+        calendar->tasks->tail->next = new_node;
+        calendar->tasks->tail = new_node;
+    }
+
+    free(new_task);
+    return true;
+}
+
+// Function to update task.
+Task *update_task(const char *task_description, CompletionLevel completion_level, bool is_subtask, bool is_recurring, bool have_reminder,
+                  unsigned int priority, RecurrenceType recurrence_type, Time *minutes, Time *hours, const char *notes_description,
+                  const char *reminder_description, SubTask *sub_task)
+{
+    Task *update_task = (Task *)malloc(sizeof(Task));
+    if (update_task == NULL)
+    {
         fprintf(stderr, "Memory allocation failed for Task\n");
         return NULL;
     }
@@ -334,97 +433,127 @@ Task* update_task(const char* task_description, CompletionLevel completion_level
     update_task->task_description = allocate_string(task_description);
     update_task->task_notes = allocate_notes(notes_description);
     update_task->reminder_description = allocate_string(reminder_description);
-    
+
     return update_task;
 }
 
-void free_task(Node *task)
+void delete_task(Node **task_list, int task_id)
 {
-    if (!task)
+    if (*task_list == NULL)
     {
+        fprintf(stderr, "Error: Empty task list\n");
         return;
     }
 
-    // Free task description
-    // free notes description
-    free(task->task.task_description);
-    if (task->task.task_notes)
+    if ((*task_list)->task.task_id == task_id)
     {
-        free(task->task.task_notes->notes_description);
-        free(task->task.task_notes);
-    }
-    
-    free(task->task.task_time);
-    free(task->task.reminder_description);
-
-    // Free up sub-tasks
-    while (task->task.sub_task)
-    {
-        SubTask *next = task->task.sub_task->next;
-        free(task->task.sub_task);
-        task->task.sub_task = next;
+        Node *temp = *task_list;
+        *task_list = (*task_list)->next;
+        free_task(&temp->task); // Pass the address of the task
+        free(temp);             // Free the Node structure
+        return;
     }
 
-    free(task);
+    Node *current = *task_list;
+    while (current->next != NULL)
+    {
+        if (current->next->task.task_id == task_id)
+        {
+            Node *temp = current->next;
+            current->next = current->next->next;
+            free_task(&temp->task); // Pass the address of the task
+            free(temp);             // Free the Node structure
+            return;
+        }
+        current = current->next;
+    }
+
+    fprintf(stderr, "Task with ID %d not found\n", task_id);
 }
 
+// Function to add appointment.
+void add_appointment(Calendar *calendar, Appointment *new_appointment)
+{
+    if (new_appointment == NULL)
+        return;
+
+    if (calendar->head == NULL || new_appointment->priority > calendar->head->priority)
+    {
+        new_appointment->next = calendar->head;
+        calendar->head = new_appointment;
+        if (calendar->tail == NULL)
+            calendar->tail = new_appointment;
+    }
+    else
+    {
+        Appointment *current = calendar->head;
+        while (current->next != NULL && new_appointment->priority <= current->next->priority)
+        {
+            current = current->next;
+        }
+        new_appointment->next = current->next;
+        current->next = new_appointment;
+        if (new_appointment->next == NULL)
+            calendar->tail = new_appointment;
+    }
+
+    calendar->appointment_count++;
+}
+
+// Function to create calendar.
 Calendar *create_calendar(Node *task, int day, int month, int year)
 {
-    // Input validation
-    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1 || year > MAX_YEAR)
+    if (!is_valid_date(day, month, year))
     {
-        fprintf(stderr, "Invalid date parameters\n");
         return NULL;
     }
 
-    Calendar *new_calendar = (Calendar *)malloc(sizeof(Calendar));
-
-    if (new_calendar == NULL)
+    Calendar *calendar = (Calendar *)calloc(1, sizeof(Calendar));
+    if (!calendar)
     {
-        fprintf(stderr, "Memory allocation failed for Calendar\n");
         return NULL;
     }
 
-    new_calendar->day = day;
-    new_calendar->month = (Month)month;
-    new_calendar->year = year;
-    new_calendar->tasks = task;
-    new_calendar->appointment_count = 0;
-    new_calendar->head = NULL;
-    new_calendar->tail = NULL;
+    calendar->day = day;
+    calendar->month = (Month)month;
+    calendar->year = year;
+    calendar->tasks = task;
+    calendar->total_days = days_in_year(year);
+    calendar->days_in_current_month = get_days_in_month((Month)month, year);
 
-    new_calendar->total_days = days_in_year(year);
-    new_calendar->days_in_current_month = get_days_in_month((Month)month, year);
-
-    // Optional appointment creation
-    if (task != NULL && task->task.appointment != NULL)
+    if (task && task->task.appointment)
     {
-        Appointment *new_appointment = task->task.appointment;
-        new_calendar->head = new_appointment;
-        new_calendar->tail = new_appointment;
-        new_calendar->appointment_count++;
+        add_appointment(calendar, task->task.appointment);
     }
 
-    return new_calendar;
+    return calendar;
 }
 
+// Function to allocated free appointment.
 void free_appointment(Appointment *appointment)
 {
-    if (appointment != NULL)
-    {
-        if (appointment->description != NULL)
-        {
-            free(appointment->description);
-        }
-        if (appointment->time != NULL)
-        {
-            free(appointment->time);
-        }
+    if (!appointment)
+        return;
 
-        free(appointment);
-    }
+    free(appointment->description);
+    free(appointment->time);
+
+    free(appointment);
 }
 
+// Function to mark task as different completion level.
+void mark_task(Task *task, CompletionLevel completion_level)
+{
+    if (task == NULL)
+    {
+        fprintf(stderr, "Error: Null task pointer\n");
+        return;
+    }
+
+    task->completion_level = completion_level;
+}
+
+// Function to free allcoated Calendar.
 void free_calendar(Calendar *calendar)
 {
     if (calendar == NULL)
@@ -444,13 +573,24 @@ void free_calendar(Calendar *calendar)
     free(calendar);
 }
 
-Appointment *create_appointment(int id, int day, const char *appointment_description, bool is_complete, int appointment_duration, const char *time)
+// Comparison function to determine the correct position for the new appointment
+int compare_appointments(Appointment *a, Appointment *b)
+{
+    if (a->priority > b->priority)
+        return -1;
+    if (a->priority < b->priority)
+        return 1;
+    return 0;
+}
+
+// Function to create appointment.
+Appointment *create_appointment(int id, int day, const char *appointment_description, bool is_complete, int appointment_duration, const char *time, unsigned int priority)
 {
     Appointment *new_appointment = (Appointment *)malloc(sizeof(Appointment));
 
     if (new_appointment == NULL)
     {
-        fprintf(stderr, "Memory allocate failed for appointment");
+        fprintf(stderr, "Memory allocation failed for appointment");
         return NULL;
     }
 
@@ -461,121 +601,36 @@ Appointment *create_appointment(int id, int day, const char *appointment_descrip
     new_appointment->description = allocate_string(appointment_description);
     new_appointment->time = allocate_string(time);
     new_appointment->next = NULL;
+    new_appointment->priority = priority; // Set the priority
 
     return new_appointment;
 }
 
-void add_appointment(Calendar *calendar, Appointment *appointment)
+// Function to update appointment.
+Appointment *update_appointment(Appointment *appointment, int id, int day, const char *appointment_description, bool is_complete, int appointment_duration, const char *time)
 {
     if (appointment == NULL)
     {
-        return;
+        fprintf(stderr, "Error: Null appointment pointer\n");
+        return NULL;
     }
 
-    if (calendar->head == NULL)
-    {
-        calendar->head = calendar->tail = appointment;
-    }
-    else
-    {
-        calendar->tail->next = appointment;
-        calendar->tail = appointment;
-    }
+    appointment->id = id;
+    appointment->day = day;
+    appointment->appointment_duration = appointment_duration;
+    appointment->is_complete = is_complete;
 
-    calendar->appointment_count++;
+    free(appointment->description);
+    appointment->description = allocate_string(appointment_description);
+
+    free(appointment->time);
+    appointment->time = allocate_string(time);
+
+    return appointment;
 }
 
 int main()
 {
-    // Initialize a new calendar
-    Calendar *calendar = create_calendar(NULL, 1, 1, 2025);
-    if (calendar == NULL)
-    {
-        fprintf(stderr, "Failed to create calendar\n");
-        return 1;
-    }
-
-    // Create a new task
-    Time task_time = {30, 14}; // Task at 2:30 PM
-    Task *new_task = NULL;
-    add_task(
-        &new_task,
-        "Finish project report", // Task description
-        in_progress,             // Completion level
-        false,                   // Not a sub-task
-        false,                   // Not recurring
-        true,                    // Has a reminder
-        3,                       // Priority
-        NONE,                    // No recurrence
-        &task_time,              // Time: 14:30
-        &task_time,
-        "Ensure all sections are complete", // Notes
-        "Reminder: Finalize by 3 PM",       // Reminder
-        NULL                                // No sub-tasks
-    );
-
-    if (new_task == NULL)
-    {
-        fprintf(stderr, "Failed to create task\n");
-        free_calendar(calendar);
-        return 1;
-    }
-
-    // Add the task to a calendar node
-    Node *task_node = (Node *)malloc(sizeof(Node));
-    if (task_node == NULL)
-    {
-        fprintf(stderr, "Failed to allocate memory for task node\n");
-        free_task(task_node);
-        free_calendar(calendar);
-        return 1;
-    }
-
-    task_node->task = *new_task;
-    task_node->next = task_node->previous = NULL;
-    calendar->tasks = task_node;
-
-    // Create and add an appointment
-    Appointment *new_appointment = create_appointment(
-        1,  // ID
-        1,  // Day
-        "Team meeting",  // Description
-        false,           // Not complete
-        60,              // Duration: 1 hour
-        "10:00 AM"       // Time
-    );
-
-    if (new_appointment == NULL)
-    {
-        fprintf(stderr, "Failed to create appointment\n");
-        free_task(task_node);
-        free_calendar(calendar);
-        return 1;
-    }
-
-    add_appointment(calendar, new_appointment);
-
-    // Print calendar information
-    printf("Calendar for %d/%d/%d:\n", calendar->day, calendar->month + 1, calendar->year);
-    printf("Tasks:\n");
-    Node *current_task = calendar->tasks;
-    while (current_task != NULL)
-    {
-        printf(" - %s (Priority: %d)\n", current_task->task.task_description, current_task->task.priority);
-        current_task = current_task->next;
-    }
-
-    printf("Appointments:\n");
-    Appointment *current_appointment = calendar->head;
-    while (current_appointment != NULL)
-    {
-        printf(" - %s at %s (Duration: %d minutes)\n", current_appointment->description, current_appointment->time, current_appointment->appointment_duration);
-        current_appointment = current_appointment->next;
-    }
-
-    // Clean up allocated memory
-    free_task(task_node);
-    free_calendar(calendar);
 
     return 0;
 }
