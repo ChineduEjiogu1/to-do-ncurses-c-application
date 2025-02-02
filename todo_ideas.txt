@@ -33,3 +33,37 @@ ask for recurrence frequency.
 
 add export and import task and appointments to a file.
 
+
+functionality
+-------------
+using doubly linked list.
+
+add a task.
+update a task.
+delete a task.
+add subtask to the main task.
+set a recurrence for task.
+set time for task.
+add an appointment alongside a task.
+priority will be set the task to be higher or lower in the task list.
+a task should come with a reminder, and if it hits the reminder time it gives it the highest priority.
+
+add notes to a task and an appointment.
+
+add a appointment.
+update an appointment.
+delete an appointment.
+set recurrence type for an appointment.
+set a tine for appointment.
+add an task alongside an appointment.
+priority will be set the appointment to be higher or lower in the appointment list.
+a appointment should come with a reminder, and if it hits the reminder time it gives it the highest priority.
+
+add a calendar.
+update a calendar.
+let calendar be populated with tasks and appointments.
+
+
+it will all be added to a calendar, the calendar will be the focal point for the application.
+
+task tree could  be implemented later in the development cycle.
