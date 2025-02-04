@@ -1,8 +1,7 @@
-#ifndef LINKED_LIST_H
-#define LINKED_LIST_H
+#ifndef DOUBLY_LINKED_LIST_H
+#define DOUBLY_LINKED_LIST_H
 #include <stdlib.h>
 #include <stdbool.h>
-
 typedef enum RecurrenceType
 {
     NONE,
@@ -53,6 +52,7 @@ typedef struct DoublyLinkedList
 {
     Node *head;
     Node *tail;
+    unsigned int size;
 }DoublyLinkedList;
 
 typedef struct Time
@@ -122,16 +122,14 @@ bool is_empty(DoublyLinkedList *list);
 
 Node *insert_by_position(DoublyLinkedList *list, unsigned int position, struct Data *data);
 
-void insert_after(Node* previous_node, struct Data *data);
+Node *insert_after(DoublyLinkedList *list, Node *previous_node, struct Data *data);
 
-void insert_before(DoublyLinkedList *list, Node* next_node, Node *data);
+Node *insert_before(DoublyLinkedList *list, Node* next_node, struct Data *data);
 
 Node *delete_by_value(DoublyLinkedList *list, int target_value);
 
 void traverse_forward(DoublyLinkedList *list);
 
 void free_list(DoublyLinkedList *list);
-
-void free_node(Node *head);
 
 #endif
