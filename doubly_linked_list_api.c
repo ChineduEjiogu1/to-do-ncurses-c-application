@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "to_do_app.h"
+#include "doubly_linked_list.h"
 
 Node *create_node(struct Data *data)
 {
@@ -25,6 +25,7 @@ DoublyLinkedList *create_list(int capacity)
 
     if (!new_list)
     {
+        printf("Memory allocation failed for list\n");
         return NULL;
     }
 
@@ -72,7 +73,7 @@ Node *insert_front(DoublyLinkedList *list, struct Data *data)
         list->head->previous = new_node;
         list->head = new_node;
     }
-    
+
     list->size++;
     return new_node;
 }
@@ -104,7 +105,7 @@ Node *insert_back(DoublyLinkedList *list, struct Data *data)
         list->tail->next = new_node;
         list->tail = new_node;
     }
-    
+
     list->size++;
     return new_node;
 }
@@ -286,83 +287,78 @@ Node *insert_before(DoublyLinkedList *list, Node *next_node, struct Data *data)
 
 Node *delete_by_value(DoublyLinkedList *list, int target_value)
 {
-    Node *current = list->head;
-
-    if (list->head == NULL)
+    if (!list || is_empty(list))
     {
+        printf("List is empty or invalid\n");
         return NULL;
     }
 
+    Node *current = list->head;
+
     if (list->head->data->value == target_value)
     {
-        Node *temp = list->head;
-        list->head = list->head->next;
-        if (list->head != NULL)
-        {
-            list->head->previous = NULL;
-        }
-        else 
-        {
-            list->tail = NULL;
-        }
-        free(temp);
-        list->size--;
-        return list->head; 
-    }
+        Node *node_to_delete = list->head;
+        Node *new_head = list->head->next;
 
-    if (list->tail->data->value == target_value)
-    {
-        Node *temp = list->tail;
-        list->tail = list->tail->previous;
-        if (list->tail != NULL)
+        if (new_head)
         {
-            list->tail->next = NULL;
+            new_head->previous = NULL;
         }
         else
         {
-            list->head = NULL;
+            list->tail = NULL;
         }
-        free(temp);
+        free(node_to_delete->data);
+        free(node_to_delete);
+        list->head = new_head;
         list->size--;
-        return list->head;
+        return new_head;
     }
 
-    current = list->head;
-    while (current != NULL && current->data->value != target_value)
+    while (current && current->data->value != target_value)
     {
         current = current->next;
     }
 
-    if (current != NULL) 
+    if (!current)
     {
-        Node *node_to_delete = current;
-
-        
-        if (node_to_delete->previous != NULL)
-        {
-            node_to_delete->previous->next = node_to_delete->next;
-        }
-        
-        if (node_to_delete->next != NULL)
-        {
-            node_to_delete->next->previous = node_to_delete->previous;
-        }
-
-        free(node_to_delete);
-        list->size--;
+        printf("Value %d not found in list\n", target_value);
+        return list->head;
     }
 
+    Node *node_to_delete = current;
+
+    node_to_delete->previous->next = node_to_delete->next;
+
+    if (node_to_delete->next)
+    {
+        node_to_delete->next->previous = node_to_delete->previous;
+    }
+    else
+    {
+        list->tail = node_to_delete->previous;
+    }
+
+    free(node_to_delete->data);
+    free(node_to_delete);
+    list->size--;
     return list->head;
 }
 
 void traverse_forward(DoublyLinkedList *list)
 {
-    Node *temp = list->head;
-
-    while (temp != NULL)
+    if (!list || is_empty(list))
     {
-        printf("%d <-> ", temp->data->value);
-        temp = temp->next;
+        printf("List is empty\n");
+        return;
+    }
+
+    Node *current = list->head;
+
+    while (current)
+    {
+        printf("%d <-> ", current->data->value);
+        current = current->next;
     }
 
     printf("NULL\n");
@@ -390,23 +386,44 @@ int main()
 {
     DoublyLinkedList *list = create_list(10);
 
-    struct Data data1 = {1};
-    struct Data data2 = {2};
-    struct Data data3 = {3};
-    struct Data data4 = {4};
-    struct Data data5 = {5};
-    struct Data data6 = {6};
-    struct Data data7 = {7};
-    struct Data data8 = {8};
-    struct Data data9 = {9};
-    struct Data data10 = {10};
-    struct Data data11 = {11};
+    struct Data *data1 = (struct Data *)malloc(sizeof(struct Data));
+    data1->value = 1;
 
-    insert_by_position(list, 0, &data1);
-    insert_by_position(list, 1, &data3);
-    insert_by_position(list, 2, &data2);
-    insert_by_position(list, 3, &data4);
-    insert_by_position(list, 4, &data5);
+    struct Data *data2 = (struct Data *)malloc(sizeof(struct Data));
+    data2->value = 2;
+
+    struct Data *data3 = (struct Data *)malloc(sizeof(struct Data));
+    data3->value = 3;
+
+    struct Data *data4 = (struct Data *)malloc(sizeof(struct Data));
+    data4->value = 4;
+
+    struct Data *data5 = (struct Data *)malloc(sizeof(struct Data));
+    data5->value = 5;
+
+    struct Data *data6 = (struct Data *)malloc(sizeof(struct Data));
+    data6->value = 6;
+
+    struct Data *data7 = (struct Data *)malloc(sizeof(struct Data));
+    data7->value = 7;
+
+    struct Data *data8 = (struct Data *)malloc(sizeof(struct Data));
+    data8->value = 8;
+
+    struct Data *data9 = (struct Data *)malloc(sizeof(struct Data));
+    data9->value = 9;
+
+    struct Data *data10 = (struct Data *)malloc(sizeof(struct Data));
+    data10->value = 10;
+
+    struct Data *data11 = (struct Data *)malloc(sizeof(struct Data));
+    data11->value = 11;
+
+    insert_by_position(list, 0, data1);
+    insert_by_position(list, 1, data3);
+    insert_by_position(list, 2, data2);
+    insert_by_position(list, 3, data4);
+    insert_by_position(list, 4, data5);
 
     printf("Original list before any additions:\n");
     traverse_forward(list);
@@ -416,39 +433,41 @@ int main()
     Node *fourth_node = list->head->next->next->next;
     Node *fifth_node = list->head->next->next->next->next;
 
-    insert_after(list, second_node, &data7);
+    insert_after(list, second_node, data7);
     printf("After inserting 7 after second node: \n");
     traverse_forward(list);
 
-    insert_after(list, fifth_node, &data6);
+    insert_after(list, fifth_node, data6);
     printf("After inserting 6 after fifth node: \n");
     traverse_forward(list);
 
-    insert_before(list, first_node, &data8);
+    insert_before(list, first_node, data8);
     printf("After inserting 8 at the head: \n");
     traverse_forward(list);
 
-    insert_before(list, fourth_node, &data9);
+    insert_before(list, fourth_node, data9);
     printf("After inserting 9 before fourth node: \n");
     traverse_forward(list);
 
     int target_value = 3;
-    delete_by_value(list, target_value);
-    printf("After deleting node with value %d: ", target_value);
+    list->head = delete_by_value(list, target_value);
+    printf("After deleting node with value %d: \n", target_value);
     traverse_forward(list);
 
     int target_value_2 = 5;
-    delete_by_value(list, target_value_2);
-    printf("After deleting node with value %d: ", target_value_2);
+    list->head = delete_by_value(list, target_value_2);
+    printf("After deleting node with value %d: \n", target_value_2);
     traverse_forward(list);
 
-    insert_front(list, &data10);
+    insert_front(list, data10);
     printf("Inserting 10 in front of the list: \n");
     traverse_forward(list);
 
-    insert_back(list, &data11);
+    insert_back(list, data11);
     printf("Inserting 11 at the back of the list: \n");
     traverse_forward(list);
+
+    printf("List size: %d\n", list->size);
 
     free_list(list);
     return 0;
