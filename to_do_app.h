@@ -2,6 +2,13 @@
 #define TO_DO_APP_H
 #include <stdlib.h>
 #include <stdbool.h>
+
+struct Time;
+struct SubTask;
+struct Notes;
+struct Appointment;
+struct Task;
+struct Calendar;
 typedef enum RecurrenceType
 {
     NONE,
@@ -78,7 +85,7 @@ typedef struct Calendar
     struct Task *task;
 }Calendar;
 
-typedef struct Task
+typedef struct Task 
 {
     int id;
     char *description;
@@ -91,7 +98,7 @@ typedef struct Task
     char date;
     Notes notes;
     SubTask sub_task;
-    struct Appointment *appointment;
-}Task;
+    Appointment *appointment;
+} Task;
 
 #endif
