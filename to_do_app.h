@@ -53,6 +53,7 @@ typedef struct DoublyLinkedList
     Node *head;
     Node *tail;
     unsigned int size;
+    int max_capacity;
 }DoublyLinkedList;
 
 typedef struct Time
@@ -119,6 +120,12 @@ Node* create_node(struct Data *data);
 DoublyLinkedList *create_list();
 
 bool is_empty(DoublyLinkedList *list);
+
+bool is_full(DoublyLinkedList *list);
+
+Node *insert_front(DoublyLinkedList *list, struct Data *data);
+
+Node *insert_back(DoublyLinkedList *list, struct Data *data);
 
 Node *insert_by_position(DoublyLinkedList *list, unsigned int position, struct Data *data);
 
