@@ -16,7 +16,8 @@ HashMap *create_hash_map(int capacity)
         return NULL;
     }
 
-    new_hash_map->buckets = (HashMapEntry **)malloc(capacity * sizeof(*new_hash_map->buckets));
+    new_hash_map->buckets = (HashMapEntry **)calloc(capacity, sizeof(*new_hash_map->buckets));
+    
     if (!new_hash_map->buckets)
     {
         printf("Memory allocation failed for buckets\n");
@@ -27,12 +28,6 @@ HashMap *create_hash_map(int capacity)
     new_hash_map->capacity = capacity;
     new_hash_map->size = 0;
     new_hash_map->load_factor = LOAD_FACTOR_THRESHOLD;
-
-    // Ensure all buckets are initialized to NULL
-    for (int i = 0; i < new_hash_map->capacity; i++)
-    {
-        new_hash_map->buckets[i] = NULL;
-    }
 
     return new_hash_map;
 }
