@@ -1,7 +1,7 @@
 #ifndef TO_DO_APP_H
 #define TO_DO_APP_H
-#include <stdlib.h>
-#include <stdbool.h>
+#include "doubly_linked_list.h"
+#include "hash_map.h"
 
 struct Time;
 struct SubTask;
@@ -100,5 +100,28 @@ typedef struct Task
     SubTask sub_task;
     Appointment *appointment;
 } Task;
+
+Task *create_task(DoublyLinkedList *list, HashMap *map, int id, const char *description, unsigned int priority);
+
+SubTask *create_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority);
+
+Node *add_task_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *map, int task_id);
+
+Task *update_task(DoublyLinkedList *list, HashMap *map, int task_id, const char *new_description, unsigned int new_priority);
+
+bool delete_task(DoublyLinkedList *list, HashMap *map, int task_id);
+
+Appointment *create_appointment(DoublyLinkedList *list, HashMap *map, int id, char date, Time time, MonthsInAYear month, Notes notes, bool have_reminder, RecurrenceType recurrence);
+
+Node *add_appointment_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *map, int appointment_id);
+
+Appointment *update_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id, char new_date, Time new_time, MonthsInAYear new_month, Notes new_notes, bool new_have_reminder, RecurrenceType new_recurrence);
+
+bool delete_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id);
+
+void link_task_to_appointment(Task *task, Appointment *appointment);
+
+Calendar *create_calendar();
+
 
 #endif
