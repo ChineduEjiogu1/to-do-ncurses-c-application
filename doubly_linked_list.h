@@ -23,7 +23,7 @@ typedef struct DoublyLinkedList
 
 Node* create_node(struct Data *data);
 
-DoublyLinkedList *create_list();
+DoublyLinkedList *create_list(int capacity);
 
 bool is_empty(DoublyLinkedList *list);
 

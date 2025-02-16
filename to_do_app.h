@@ -109,7 +109,11 @@ Node *add_task_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *
 
 Task *update_task(DoublyLinkedList *list, HashMap *map, int task_id, const char *new_description, unsigned int new_priority);
 
+SubTask *update_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority);
+
 bool delete_task(DoublyLinkedList *list, HashMap *map, int task_id);
+
+bool delete_sub_task(DoublyLinkedList *list, HashMap *map, int task_id);
 
 Appointment *create_appointment(DoublyLinkedList *list, HashMap *map, int id, char date, Time time, MonthsInAYear month, Notes notes, bool have_reminder, RecurrenceType recurrence);
 
@@ -121,7 +125,8 @@ bool delete_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id
 
 void link_task_to_appointment(Task *task, Appointment *appointment);
 
-Calendar *create_calendar();
+Calendar *create_calendar(char date, char year, Time time, MonthsInAYear months, struct Appointment *appointment, struct Task *task);
 
+Calendar *update_calendar(char date, char year, Time time, MonthsInAYear months, struct Appointment *appointment, struct Task *task);
 
 #endif

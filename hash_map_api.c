@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "doubly_linked_list.h"
 #include "hash_map.h"
 
 #define LOAD_FACTOR_THRESHOLD 0.75
@@ -70,18 +69,16 @@ bool needs_resizing(HashMap *map)
 }
 
 // Resize the hash map
-void resize_hash_map(HashMap *map)
+bool resize_hash_map(HashMap *map)
 {
     int old_capacity = map->capacity;
-
     int new_capacity = old_capacity * 2;
 
     HashMapEntry **new_buckets = (HashMapEntry **)calloc(new_capacity, sizeof(HashMapEntry *));
-
     if (!new_buckets)
     {
         printf("Memory allocation failed for resizing\n");
-        return;
+        return false;
     }
 
     // Rehash all elements
@@ -103,6 +100,8 @@ void resize_hash_map(HashMap *map)
     free(map->buckets);
     map->buckets = new_buckets;
     map->capacity = new_capacity;
+
+    return true; // Success
 }
 
 // Find an entry in the hash map
@@ -124,16 +123,34 @@ HashMapEntry *find_hash_entry(HashMap *map, int key)
 }
 
 // Insert into the hash map
-void insert_into_hash_map(HashMap *map, int key, Node *node)
+bool insert_into_hash_map(HashMap *map, int key, Node *node)
 {
+    if (!map)
+    {
+        printf("Error: Hash map is NULL\n");
+        return false;
+    }
+
+    if (!node)
+    {
+        printf("Error: Node is NULL\n");
+        return false;
+    }
+
     int index = hash_function(key, map->capacity);
+
+    if (index < 0 || index >= map->capacity)
+    {
+        printf("Error: Invalid index calculated by hash function (%d)\n", index);
+        return false;
+    }
 
     HashMapEntry *new_entry = (HashMapEntry *)malloc(sizeof(HashMapEntry));
 
     if (!new_entry)
     {
         printf("Memory allocation failed for new entry\n");
-        return;
+        return false;
     }
 
     new_entry->key = key;
@@ -142,25 +159,34 @@ void insert_into_hash_map(HashMap *map, int key, Node *node)
     map->buckets[index] = new_entry;
     map->size++;
 
-    // 🔹 **Check resizing after updating size**
-    // printf("Checking resize: Size: %d, Capacity: %d, Load Factor: %.2f\n",
-    //       map->size, map->capacity, (float)map->size / map->capacity);
+    printf("Inserted key %d at index %d\n", key, index);
 
+    // Resize if needed
     if (needs_resizing(map))
     {
         printf("Resizing hash map...\n");
-        resize_hash_map(map);
+        if (!resize_hash_map(map))
+        {
+            printf("Error: Failed to resize hash map\n");
+            return false;
+        }
     }
+
+    return true; // Success
 }
 
-
 // Delete an entry from the hash map
-void delete_from_hash_map(HashMap *map, int key)
+bool delete_from_hash_map(HashMap *map, int key)
 {
+    if (!map)
+    {
+        printf("Error: Hash map is NULL\n");
+        return false;
+    }
+
     int index = hash_function(key, map->capacity);
 
     HashMapEntry *current = map->buckets[index];
-
     HashMapEntry *previous = NULL;
 
     while (current)
@@ -175,14 +201,19 @@ void delete_from_hash_map(HashMap *map, int key)
             {
                 map->buckets[index] = current->next;
             }
+
             free(current);
             map->size--;
-            return;
+            return true; // Successfully deleted
         }
         previous = current;
         current = current->next;
     }
+
+    printf("Error: Key %d not found in hash map\n", key);
+    return false; // Key not found
 }
+
 
 void print_hash_table(HashMap *map)
 {
@@ -236,46 +267,4 @@ void free_hash_map(HashMap *map)
 
     free(map->buckets); // Free the array of bucket pointers
     free(map);          // Free the HashMap structure itself
-}
-
-// Main function for testing
-int main()
-{
-    HashMap *hash_map = create_hash_map(10);
-
-    if (!hash_map)
-    {
-        printf("Failed to create hash map\n");
-        return 1;
-    }
-
-    printf("Is hash map empty? %s\n", hash_map_is_empty(hash_map) ? "Yes" : "No");
-
-    printf("\nInserting entries to test resizing...\n");
-    for (int i = 1; i <= 8; i++)
-    {
-        insert_into_hash_map(hash_map, i, NULL);
-        printf("Inserted key %d\n", i);
-    }
-
-    printf("\nFinal hash map contents:\n");
-    print_hash_table(hash_map);
-
-    printf("\nHash map statistics:\n");
-    printf("Size: %d\n", hash_map_size(hash_map));
-    printf("Capacity: %d\n", hash_map->capacity);
-
-    printf("\nFinding entry with key 2...\n");
-    HashMapEntry *found_node = find_hash_entry(hash_map, 2);
-    printf("Entry found: %s\n", found_node ? "Yes" : "No");
-
-    printf("\nDeleting entry with key 3...\n");
-    delete_from_hash_map(hash_map, 3);
-
-    printf("\nHash map after deletion:\n");
-    print_hash_table(hash_map);
-
-    free_hash_map(hash_map);
-
-    return 0;
 }

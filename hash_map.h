@@ -28,11 +28,11 @@ int hash_function(int capacity, int key);
 
 bool needs_resizing(HashMap *map);
 
-void resize_hash_map(HashMap *map);
+bool resize_hash_map(HashMap *map);
 
-void insert_into_hash_map(HashMap *map, int key, Node *node);
+bool insert_into_hash_map(HashMap *map, int key, Node *node);
 
-void delete_from_hash_map(HashMap *map, int key);
+bool delete_from_hash_map(HashMap *map, int key);
 
 HashMapEntry *find_hash_entry(HashMap *map, int key);
 
