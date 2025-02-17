@@ -97,9 +97,10 @@ typedef struct Task
     Time time;
     char date;
     Notes notes;
-    SubTask sub_task;
+    DoublyLinkedList *subtasks; // Store multiple subtasks
     Appointment *appointment;
 } Task;
+
 
 Task *create_task(DoublyLinkedList *list, HashMap *map, int id, const char *description, unsigned int priority);
 
