@@ -1,7 +1,9 @@
 #ifndef BST_H
 #define BST_H
 
+#include <stdbool.h>
 #include "doubly_linked_list.h"
+
 
 // Generic BST Node
 typedef struct BSTNode 
@@ -23,18 +25,19 @@ BST *create_tree(int (*cmp)(void *, void *));
 
 
 
-void add_to_bst(BST *tree, void *key, void *data);  // Wrapper for inserting into BST
+bool add_to_bst(BST *tree, void *key, void *data);  // Wrapper for inserting into BST
 
-void *copy_key(void *key);
+void *copy_key(void *key, size_t key_size);
 
-void *copy_data(void *data);
+void *copy_data(void *data, size_t data_size);
 
 BSTNode *find_bst_node(BSTNode *node, void *key, int (*cmp)(void *, void *));
 
 BSTNode *insert_into_bst(BSTNode *node, void *key, void *data, int (*cmp)(void *, void *));
 
-BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), void (*free_key)(void *), 
-                         int (*cmp)(void *, void *), void *(*copy_key)(void *), void *(*copy_data)(void *));
+BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), void (*free_key)(void *),
+                         int (*cmp)(void *, void *), void *(*copy_key)(void *, size_t), 
+                         void *(*copy_data)(void *, size_t), size_t key_size, size_t data_size);
 
 BSTNode *find_min(BSTNode *node);
 

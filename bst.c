@@ -28,48 +28,35 @@ BST *create_tree(int (*cmp)(void *, void *))
     return new_tree;
 }
 
-void add_to_bst(BST *tree, void *key, void *data) 
+bool add_to_bst(BST *tree, void *key, void *data) 
 {
     tree->root = insert_into_bst(tree->root, key, data, tree->cmp);
 }
 
-void *copy_key(void *key) 
+void *copy_key(void *key, size_t key_size) 
 {
-    char *new_key = (char *)malloc(strlen((char *)key) + 1);
+    void *new_key = malloc(key_size);
 
-    if (new_key)
+    if (new_key) 
     {
-        strcpy(new_key, (char *)key);
+        memcpy(new_key, key, key_size);
     }
 
     return new_key;
 }
 
-void *copy_data(void *data) 
+void *copy_data(void *data, size_t data_size) 
 {
-    int *new_data = (int *)malloc(sizeof(int));
+    void *new_data = malloc(data_size);
 
-    if (new_data)
+    if (new_data) 
     {
-        *new_data = *(int *)data;
+        memcpy(new_data, data, data_size);
     }
 
     return new_data;
 }
 
-BSTNode *find_min(BSTNode *node)
-{
-    if (node == NULL)
-    {
-        return NULL;
-    }
-    else if (node->left != NULL)
-    {
-        return find_min(node->left);
-    }
-    
-    return node;
-}
 
 BSTNode *find_bst_node(BSTNode *node, void *key, int (*cmp)(void *, void *))
 {
@@ -125,8 +112,9 @@ BSTNode *insert_into_bst(BSTNode *root, void *key, void *data, int (*cmp)(void *
     return root;
 }
 
-BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), void (*free_key)(void *), 
-                         int (*cmp)(void *, void *), void *(*copy_key)(void *), void *(*copy_data)(void *)) 
+BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), void (*free_key)(void *),
+                         int (*cmp)(void *, void *), void *(*copy_key)(void *, size_t), 
+                         void *(*copy_data)(void *, size_t), size_t key_size, size_t data_size) 
 {
     if (!node) 
     {
@@ -135,11 +123,11 @@ BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), vo
 
     if (cmp(key, node->key) < 0) 
     {
-        node->left = delete_bst_node(node->left, key, free_data, free_key, cmp, copy_key, copy_data);
+        node->left = delete_bst_node(node->left, key, free_data, free_key, cmp, copy_key, copy_data, key_size, data_size);
     } 
     else if (cmp(key, node->key) > 0) 
     {
-        node->right = delete_bst_node(node->right, key, free_data, free_key, cmp, copy_key, copy_data);
+        node->right = delete_bst_node(node->right, key, free_data, free_key, cmp, copy_key, copy_data, key_size, data_size);
     } 
     else 
     {
@@ -160,25 +148,34 @@ BSTNode *delete_bst_node(BSTNode *node, void *key, void (*free_data)(void *), vo
             return temp;
         }
 
-        // Find the minimum node in the right subtree
         BSTNode *temp = find_min(node->right);
 
-        // Create deep copies of key and data
-        void *new_key = copy_key(temp->key);
-        void *new_data = copy_data(temp->data);
+        void *new_key = copy_key(temp->key, key_size);
+        void *new_data = copy_data(temp->data, data_size);
 
-        // Free old key and data before replacing them
         free_key(node->key);
         free_data(node->data);
 
-        // Assign new deep copies
         node->key = new_key;
         node->data = new_data;
 
-        // Recursively delete the successor node
-        node->right = delete_bst_node(node->right, temp->key, free_data, free_key, cmp, copy_key, copy_data);
+        node->right = delete_bst_node(node->right, temp->key, free_data, free_key, cmp, copy_key, copy_data, key_size, data_size);
     }
 
+    return node;
+}
+
+BSTNode *find_min(BSTNode *node)
+{
+    if (node == NULL)
+    {
+        return NULL;
+    }
+    else if (node->left != NULL)
+    {
+        return find_min(node->left);
+    }
+    
     return node;
 }
 
@@ -193,7 +190,6 @@ void inorder_traversal(BSTNode *node)
     printf("%d ", *(int *)node->key);  // Process current node
     inorder_traversal(node->right); // Visit right subtree
 }
-
 
 void free_tree(BSTNode *root, void (*free_data)(void *), void (*free_key)(void *))
 {

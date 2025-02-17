@@ -13,6 +13,7 @@
 Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, const char *description, unsigned int priority)
 {
     Task *new_task = (Task *)calloc(1, sizeof(Task));
+
     if (!new_task)
     {
         printf("Memory allocation failed for creating task\n");
@@ -20,6 +21,7 @@ Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, 
     }
 
     Data *new_data = (Data *)malloc(sizeof(Data));
+
     if (!new_data)
     {
         printf("Memory allocation failed for creating data\n");
@@ -28,6 +30,7 @@ Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, 
     }
 
     new_task->description = strdup(description);
+
     if (!new_task->description)
     {
         printf("Memory allocation failed for task description\n");
@@ -42,6 +45,7 @@ Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, 
 
     // Insert into DLL (for ordered list handling)
     Node *new_node = insert_by_position(list, id, new_data);
+
     if (!new_node)
     {
         printf("Memory allocation failed for creating node\n");
@@ -64,6 +68,7 @@ Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, 
 
     // Insert into BST based on priority
     int *priority_key = (int *)malloc(sizeof(int));
+
     if (!priority_key)
     {
         printf("Memory allocation failed for priority key\n");
@@ -158,12 +163,13 @@ void add_task_to_calendar(Calendar *calendar, BST *task_bst, HashMap *map, int t
     calendar->task = task;
 }
 
-Task *update_task(BST *task_bst, HashMap *map, int task_id, const char *new_description, unsigned int new_priority,
-                  void (*free_data)(void *), void (*free_key)(void *), void *(*copy_key)(void *), void *(*copy_data)(void *))
+Task *update_task(BST *task_bst, HashMap *map, int task_id,
+                  const char *new_description, unsigned int new_priority,
+                  void (*free_data)(void *), void (*free_key)(void *),
+                  void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t))
 {
     // Find the task node in HashMap
     Node *task_node = find_hash_entry(map, task_id);
-    
     if (!task_node)
     {
         printf("Error: Task with ID %d not found\n", task_id);
@@ -172,21 +178,80 @@ Task *update_task(BST *task_bst, HashMap *map, int task_id, const char *new_desc
 
     Task *task = (Task *)task_node->data->value;
 
-    // Remove from BST before updating priority
-    task_bst->root = delete_bst_node(task_bst->root, &task->priority, free_data, free_key, copy_key, copy_data, task_bst->cmp);
+    // Store the old priority before modifying it
+    int old_priority = task->priority;
+    int new_priority_copy = new_priority; // Make a copy in case of failure
 
-    // Free old description and update task
+    // Remove the task from BST before updating
+    task_bst->root = delete_bst_node(task_bst->root, &old_priority, free_data, free_key, copy_key, copy_data, sizeof(int), sizeof(int));
+
+    // Create a copy of the new description to avoid corruption if strdup fails
+    char *new_desc_copy = strdup(new_description);
+    if (!new_desc_copy)
+    {
+        printf("Error: Memory allocation failed for new task description\n");
+        return NULL;
+    }
+
+    // Free the old description and update task attributes
     free(task->description);
-    task->description = strdup(new_description);
-    task->priority = new_priority;
+    task->description = new_desc_copy;
+    task->priority = new_priority_copy;
 
-    // Reinsert task into BST with updated priority
-    add_to_bst(task_bst, &task->priority, task);
+    // Reinsert into BST
+    if (!add_to_bst(task_bst, &task->priority, task))
+    {
+        printf("Error: Failed to reinsert updated task into BST\n");
+        return NULL;
+    }
 
     return task;
 }
 
-SubTask *update_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority)
+SubTask *update_subtask(BST *subtask_bst, HashMap *map, int task_id,
+                        const char *new_description, unsigned int new_priority,
+                        void (*free_data)(void *), void (*free_key)(void *),
+                        void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t))
 {
+    // Find the subtask in the hash map
+    Node *sub_task_node = find_hash_entry(map, task_id);
+    if (!sub_task_node)
+    {
+        printf("Error: Task with ID %d not found\n", task_id);
+        return NULL;
+    }
 
+    // Retrieve the subtask data
+    Task *subtask = (Task *)sub_task_node->data->value;
+
+    // Make copies of the key before deleting (in case deletion modifies it)
+    int old_priority = subtask->priority;
+    int new_priority_copy = new_priority; // Keep a copy in case of failures
+
+    // Remove the old subtask from the BST
+    subtask_bst->root = delete_bst_node(subtask_bst->root, &old_priority,
+                                        free_data, free_key, copy_key, copy_data,
+                                        sizeof(int), sizeof(int));
+
+    // Allocate new memory for the updated description
+    char *new_desc_copy = strdup(new_description);
+    if (!new_desc_copy)
+    {
+        printf("Error: Memory allocation failed for new description\n");
+        return NULL;
+    }
+
+    // Free the old description and assign the new one
+    free(subtask->description);
+    subtask->description = new_desc_copy;
+    subtask->priority = new_priority_copy;
+
+    // Reinsert the subtask into the BST with the updated priority
+    if (!add_to_bst(subtask_bst, &subtask->priority, subtask))
+    {
+        printf("Error: Failed to reinsert updated subtask into BST\n");
+        return NULL;
+    }
+
+    return subtask;
 }

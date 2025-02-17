@@ -48,7 +48,7 @@ int main()
     // Delete a node
     int delete_key = 3;
     printf("Deleting key: %d\n", delete_key);
-    tree->root = delete_bst_node(tree->root, &delete_key, free_int_data, free_int_key, compare_keys, copy_key, copy_data);
+    tree->root = delete_bst_node(tree->root, &delete_key, free_int_data, free_int_key, compare_keys, copy_key, copy_data, sizeof(int), sizeof(int));
 
     printf("Inorder Traversal after Deletion: ");
     inorder_traversal(tree->root);
