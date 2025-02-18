@@ -1,16 +1,12 @@
 #ifndef TO_DO_APP_H
 #define TO_DO_APP_H
+
 #include "doubly_linked_list.h"
 #include "hash_map.h"
+#include "bst.h"
 
-struct Time;
-struct SubTask;
-struct Notes;
-struct Appointment;
-struct Task;
-struct Calendar;
-typedef enum RecurrenceType
-{
+// Recurrence Types
+typedef enum RecurrenceType {
     NONE,
     HOURLY,
     DAILY,
@@ -18,10 +14,10 @@ typedef enum RecurrenceType
     WEEKLY,
     MONTHLY,
     YEARLY
-}RecurrenceType;
+} RecurrenceType;
 
-typedef enum MonthsInAYear
-{
+// Months in a Year
+typedef enum MonthsInAYear {
     JANUARY,
     FEBRUARY,
     MARCH,
@@ -36,57 +32,46 @@ typedef enum MonthsInAYear
     DECEMBER
 } MonthsInAYear;
 
-typedef enum CompletionLevel
-{
-    not_complete,
-    pending,
-    is_complete
-}CompletionLevel;
+// Completion Levels
+typedef enum CompletionLevel {
+    NOT_COMPLETE,
+    PENDING,
+    IS_COMPLETE
+} CompletionLevel;
 
-typedef struct Time
-{
+// Time Structure
+typedef struct Time {
     char minutes;
     char hour;
-}Time;
+} Time;
 
-typedef struct SubTask
-{
+// Notes (Doubly Linked List will be used for multiple notes)
+typedef struct Notes {
+    char *description;
+} Notes;
+
+// SubTask Structure
+typedef struct SubTask {
+    int task_id; // Reference to parent Task
     char *description;
     unsigned int priority;
-}SubTask;
+} SubTask;
 
-typedef struct Notes
-{
-    char *description;
-}Notes;
-
-typedef struct Appointment Appointment;
-
-typedef struct Appointment
-{
+// Appointment Structure
+typedef struct Appointment {
     int id;
     char date;
     Time time;
-    MonthsInAYear months;
-    Notes notes;
+    MonthsInAYear month;
+    DoublyLinkedList *notes; // Multiple notes
     bool is_complete;
     bool have_reminder;
     RecurrenceType recurrence_type;
-    struct Task *task;  
-}Appointment;
+    struct Task *task;  // Linked Task
+} Appointment;
 
-typedef struct Calendar
-{
-    char date;
-    char year;
-    Time time;
-    MonthsInAYear months;
-    struct Appointment *appointment;
-    struct Task *task;
-}Calendar;
-
-typedef struct Task 
-{
+// Task Structure
+typedef struct Task {
     int id;
     char *description;
     bool is_complete;
@@ -96,38 +81,47 @@ typedef struct Task
     RecurrenceType recurrence_type;
     Time time;
     char date;
-    Notes notes;
-    DoublyLinkedList *subtasks; // Store multiple subtasks
-    Appointment *appointment;
+    DoublyLinkedList *notes; // Multiple notes
+    DoublyLinkedList *subtasks; // Multiple subtasks
+    Appointment *appointment; // Linked Appointment
 } Task;
 
+// Calendar Structure (Stores Multiple Tasks & Appointments)
+typedef struct Calendar {
+    char date;
+    char year;
+    Time time;
+    MonthsInAYear month;
+    DoublyLinkedList *appointments; // Store multiple appointments
+    DoublyLinkedList *tasks;        // Store multiple tasks
+} Calendar;
 
-Task *create_task(DoublyLinkedList *list, HashMap *map, int id, const char *description, unsigned int priority);
+// Function Prototypes
 
-SubTask *create_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority);
-
-Node *add_task_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *map, int task_id);
-
-Task *update_task(DoublyLinkedList *list, HashMap *map, int task_id, const char *new_description, unsigned int new_priority);
-
-SubTask *update_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority);
-
+// Task Management
+Task *create_task(BST *task_tree, DoublyLinkedList *list, HashMap *map, int id, const char *description, unsigned int priority);
+Task *update_task(BST *task_bst, HashMap *map, int task_id, const char *new_description, unsigned int new_priority,
+    void (*free_data)(void *), void (*free_key)(void *), int (*compare_keys)(void *, void *),
+    void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t));
 bool delete_task(DoublyLinkedList *list, HashMap *map, int task_id);
 
+// SubTask Management
+SubTask *create_subtask(DoublyLinkedList *list, HashMap *map, int task_id, const char *description, unsigned int priority);
+SubTask *update_subtask(BST *subtask_bst, HashMap *map, int task_id, const char *new_description, unsigned int new_priority,
+    void (*free_data)(void *), void (*free_key)(void *), int (*compare_keys)(void *, void *),
+    void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t));
 bool delete_sub_task(DoublyLinkedList *list, HashMap *map, int task_id);
 
-Appointment *create_appointment(DoublyLinkedList *list, HashMap *map, int id, char date, Time time, MonthsInAYear month, Notes notes, bool have_reminder, RecurrenceType recurrence);
-
-Node *add_appointment_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *map, int appointment_id);
-
-Appointment *update_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id, char new_date, Time new_time, MonthsInAYear new_month, Notes new_notes, bool new_have_reminder, RecurrenceType new_recurrence);
-
+// Appointment Management
+Appointment *create_appointment(DoublyLinkedList *list, HashMap *map, int id, char date, Time time, MonthsInAYear month, bool have_reminder, RecurrenceType recurrence);
+Appointment *update_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id, char new_date, Time new_time, MonthsInAYear new_month, bool new_have_reminder, RecurrenceType new_recurrence);
 bool delete_appointment(DoublyLinkedList *list, HashMap *map, int appointment_id);
-
 void link_task_to_appointment(Task *task, Appointment *appointment);
 
-Calendar *create_calendar(char date, char year, Time time, MonthsInAYear months, struct Appointment *appointment, struct Task *task);
-
-Calendar *update_calendar(char date, char year, Time time, MonthsInAYear months, struct Appointment *appointment, struct Task *task);
+// Calendar Management
+Calendar *create_calendar(char date, char year, Time time, MonthsInAYear month);
+void add_task_to_calendar(Calendar *calendar, BST *task_bst, HashMap *map, int task_id);
+Node *add_appointment_to_calendar(Calendar *calendar, DoublyLinkedList *list, HashMap *map, int appointment_id);
+Calendar *update_calendar(Calendar *calendar, char date, char year, Time time, MonthsInAYear month);
 
 #endif

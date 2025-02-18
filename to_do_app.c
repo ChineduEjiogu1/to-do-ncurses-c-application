@@ -166,6 +166,7 @@ void add_task_to_calendar(Calendar *calendar, BST *task_bst, HashMap *map, int t
 Task *update_task(BST *task_bst, HashMap *map, int task_id,
                   const char *new_description, unsigned int new_priority,
                   void (*free_data)(void *), void (*free_key)(void *),
+                  int (*compare_keys)(void *, void *),
                   void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t))
 {
     // Find the task node in HashMap
@@ -180,12 +181,11 @@ Task *update_task(BST *task_bst, HashMap *map, int task_id,
 
     // Store the old priority before modifying it
     int old_priority = task->priority;
-    int new_priority_copy = new_priority; // Make a copy in case of failure
 
     // Remove the task from BST before updating
-    task_bst->root = delete_bst_node(task_bst->root, &old_priority, free_data, free_key, copy_key, copy_data, sizeof(int), sizeof(int));
+    task_bst->root = delete_bst_node(task_bst->root, &old_priority, free_data, free_key, compare_keys, copy_key, copy_data, sizeof(int), sizeof(int));
 
-    // Create a copy of the new description to avoid corruption if strdup fails
+    // Create a copy of the new description
     char *new_desc_copy = strdup(new_description);
     if (!new_desc_copy)
     {
@@ -196,14 +196,10 @@ Task *update_task(BST *task_bst, HashMap *map, int task_id,
     // Free the old description and update task attributes
     free(task->description);
     task->description = new_desc_copy;
-    task->priority = new_priority_copy;
+    task->priority = new_priority;
 
     // Reinsert into BST
-    if (!add_to_bst(task_bst, &task->priority, task))
-    {
-        printf("Error: Failed to reinsert updated task into BST\n");
-        return NULL;
-    }
+    add_to_bst(task_bst, &task->priority, task);
 
     return task;
 }
@@ -211,6 +207,7 @@ Task *update_task(BST *task_bst, HashMap *map, int task_id,
 SubTask *update_subtask(BST *subtask_bst, HashMap *map, int task_id,
                         const char *new_description, unsigned int new_priority,
                         void (*free_data)(void *), void (*free_key)(void *),
+                        int (*compare_keys)(void *, void *),
                         void *(*copy_key)(void *, size_t), void *(*copy_data)(void *, size_t))
 {
     // Find the subtask in the hash map
@@ -224,13 +221,12 @@ SubTask *update_subtask(BST *subtask_bst, HashMap *map, int task_id,
     // Retrieve the subtask data
     Task *subtask = (Task *)sub_task_node->data->value;
 
-    // Make copies of the key before deleting (in case deletion modifies it)
+    // Copy the old priority before deletion
     int old_priority = subtask->priority;
-    int new_priority_copy = new_priority; // Keep a copy in case of failures
 
     // Remove the old subtask from the BST
     subtask_bst->root = delete_bst_node(subtask_bst->root, &old_priority,
-                                        free_data, free_key, copy_key, copy_data,
+                                        free_data, free_key, compare_keys, copy_key, copy_data,
                                         sizeof(int), sizeof(int));
 
     // Allocate new memory for the updated description
@@ -244,14 +240,10 @@ SubTask *update_subtask(BST *subtask_bst, HashMap *map, int task_id,
     // Free the old description and assign the new one
     free(subtask->description);
     subtask->description = new_desc_copy;
-    subtask->priority = new_priority_copy;
+    subtask->priority = new_priority;
 
     // Reinsert the subtask into the BST with the updated priority
-    if (!add_to_bst(subtask_bst, &subtask->priority, subtask))
-    {
-        printf("Error: Failed to reinsert updated subtask into BST\n");
-        return NULL;
-    }
+    add_to_bst(subtask_bst, &subtask->priority, subtask);
 
     return subtask;
 }

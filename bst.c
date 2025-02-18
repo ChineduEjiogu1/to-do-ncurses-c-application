@@ -35,28 +35,25 @@ bool add_to_bst(BST *tree, void *key, void *data)
 
 void *copy_key(void *key, size_t key_size) 
 {
+    if (!key) return NULL;  // Prevent copying a NULL key
+
     void *new_key = malloc(key_size);
+    if (!new_key) return NULL;  // Ensure malloc succeeded
 
-    if (new_key) 
-    {
-        memcpy(new_key, key, key_size);
-    }
-
+    memcpy(new_key, key, key_size);
     return new_key;
 }
 
 void *copy_data(void *data, size_t data_size) 
 {
+    if (!data) return NULL;  // Prevent copying NULL data
+
     void *new_data = malloc(data_size);
+    if (!new_data) return NULL;  // Ensure malloc succeeded
 
-    if (new_data) 
-    {
-        memcpy(new_data, data, data_size);
-    }
-
+    memcpy(new_data, data, data_size);
     return new_data;
 }
-
 
 BSTNode *find_bst_node(BSTNode *node, void *key, int (*cmp)(void *, void *))
 {

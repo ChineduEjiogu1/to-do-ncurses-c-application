@@ -23,8 +23,6 @@ typedef struct BST
 // BST Functions
 BST *create_tree(int (*cmp)(void *, void *));
 
-
-
 bool add_to_bst(BST *tree, void *key, void *data);  // Wrapper for inserting into BST
 
 void *copy_key(void *key, size_t key_size);
