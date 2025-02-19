@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "hash_map.h"
+#include "hash_map_api.h"
 
 #define LOAD_FACTOR_THRESHOLD 0.75
 

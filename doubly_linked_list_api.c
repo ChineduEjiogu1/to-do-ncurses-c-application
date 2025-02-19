@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "doubly_linked_list.h"
-#include "hash_map.h"
+#include "hash_map_api.h"
 
 #define MAX_CAPACITY 1000
 

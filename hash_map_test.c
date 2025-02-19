@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "hash_map.h"
+#include "hash_map_api.h"
 #include "hash_map_api.c"
 #include "doubly_linked_list.h"
 #include "doubly_linked_list_api.c"

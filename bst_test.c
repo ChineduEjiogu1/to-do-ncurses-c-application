@@ -1,61 +1,71 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bst.h"
-#include "bst.c"
+#include "bst_api.h"
+#include "bst_api.c"
 
-// Function to compare integer keys
-int compare_keys(void *a, void *b) 
-{
+// Comparison function for integers
+int int_cmp(void *a, void *b) {
     return (*(int *)a - *(int *)b);
 }
 
-// Function to free integer keys
-void free_int_key(void *key) 
-{
+// Function to copy an integer key
+void *copy_int_key(void *key, size_t size) {
+    int *new_key = (int *)malloc(sizeof(int));
+    if (new_key) {
+        *new_key = *(int *)key;
+    }
+    return new_key;
+}
+
+// Function to free an integer key
+void free_int_key(void *key) {
     free(key);
 }
 
-// Function to free integer data
-void free_int_data(void *data) 
-{
-    free(data);
-}
-
-int main() 
-{
-    // Create BST
-    BST *tree = create_tree(compare_keys);
-    if (!tree) 
-    {
+int main() {
+    BST *tree = create_bst(int_cmp, copy_int_key, free_int_key, 10);
+    if (!tree) {
+        printf("Failed to create BST.\n");
         return 1;
     }
 
-    // Insert some values
-    for (int i = 5; i > 0; i--) 
-    {
-        int *key = (int *)malloc(sizeof(int));
-        int *data = (int *)malloc(sizeof(int));
-        *key = i;
-        *data = i * 10;
-        add_to_bst(tree, key, data);
+    int keys[] = {50, 30, 70, 20, 40, 60, 80};
+    int values[] = {50, 30, 70, 20, 40, 60, 80};  // Dummy data
+    
+    // Insert elements into BST
+    for (int i = 0; i < 7; i++) {
+        add_to_bst(tree, &keys[i], &values[i]);
     }
 
-    printf("Inorder Traversal of BST: ");
-    inorder_traversal(tree->root);
+    printf("In-order traversal after insertion:\n");
+    traverse_tree(tree);
     printf("\n");
 
-    // Delete a node
-    int delete_key = 3;
-    printf("Deleting key: %d\n", delete_key);
-    tree->root = delete_bst_node(tree->root, &delete_key, free_int_data, free_int_key, compare_keys, copy_key, copy_data, sizeof(int), sizeof(int));
+    // Search for a key
+    int search_key = 40;
+    BSTNode *found = find_bst_node(tree, &search_key);
+    if (found) {
+        printf("Key %d found in BST.\n", search_key);
+    } else {
+        printf("Key %d not found in BST.\n", search_key);
+    }
 
-    printf("Inorder Traversal after Deletion: ");
-    inorder_traversal(tree->root);
+    // Remove a key
+    int remove_key = 30;
+    if (remove_from_bst(tree, &remove_key)) {
+        printf("Key %d removed from BST.\n", remove_key);
+    } else {
+        printf("Key %d not found for deletion.\n", remove_key);
+    }
+
+    printf("In-order traversal after deletion:\n");
+    traverse_tree(tree);
     printf("\n");
 
-    // Free tree
-    free_tree(tree->root, free_int_data, free_int_key);
+    // Free the BST
+    free_bst(tree->root, free_int_key);
     free(tree);
+
     return 0;
 }
