@@ -41,13 +41,17 @@ bool add_value_to_list(AVLValueList *list, void *data)
     return true;
 }
 
-AVLValueList *copy_value_list(AVLValueList *source) {
-    if (!source) return NULL;
+AVLValueList *copy_value_list(AVLValueList *source)
+{
+    if (!source)
+        return NULL;
 
     AVLValueList *copy = create_value_list(source->capacity);
-    if (!copy) return NULL;
+    if (!copy)
+        return NULL;
 
-    for (size_t i = 0; i < source->size; i++) {
+    for (size_t i = 0; i < source->size; i++)
+    {
         copy->values[i] = source->values[i]; // Shallow copy (just copying pointers)
     }
     copy->size = source->size;

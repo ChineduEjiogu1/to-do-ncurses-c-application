@@ -46,6 +46,8 @@ void rb_rotate_left(HybridTree *tree, HybridNode *x);
 void rb_rotate_right(HybridTree *tree, HybridNode *y);
 
 // AVL Balancing Functions
+int max(int a, int b);
+void update_height(HybridNode *node);
 int get_height(HybridNode *node);
 int get_balance(HybridNode *node);
 HybridNode *avl_rotate_left(HybridNode *node);
