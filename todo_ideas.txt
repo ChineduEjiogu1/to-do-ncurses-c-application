@@ -67,3 +67,5 @@ let calendar be populated with tasks and appointments.
 it will all be added to a calendar, the calendar will be the focal point for the application.
 
 task tree could  be implemented later in the development cycle.
+
+Add a note to every subtask within a task.

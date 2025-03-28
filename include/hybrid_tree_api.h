@@ -7,6 +7,8 @@
 // Define Red-Black tree colors
 #define RED 0
 #define BLACK 1
+#define LEFT 0
+#define RIGHT 1
 
 // Hybrid Node structure combining AVL and Red-Black properties
 typedef struct HybridNode {
@@ -18,6 +20,7 @@ typedef struct HybridNode {
     struct HybridNode *left;
     struct HybridNode *right;
     struct HybridNode *parent;
+    struct HybridNode *child[2]; // child[0] = left, child[1] = right
 } HybridNode;
 
 // Hybrid Tree structure
@@ -33,17 +36,17 @@ HybridNode *create_hybrid_node(int key);
 
 // Insertion and Deletion
 void insert_hybrid(HybridTree *tree, int key);
-void delete_hybrid(HybridTree *tree, int key);
+void delete_hybrid(HybridTree *tree, int key, int dir);
 
 // Searching and Access Count Management
 HybridNode *search_hybrid(HybridTree *tree, int key);
 void increment_access_count(HybridNode *node);
 
 // Red-Black Balancing Functions
-void rb_insert_fixup(HybridTree *tree, HybridNode *node);
-void rb_delete_fixup(HybridTree *tree, HybridNode *node);
-void rb_rotate_left(HybridTree *tree, HybridNode *x);
-void rb_rotate_right(HybridTree *tree, HybridNode *y);
+HybridNode *rb_insert_fixup(HybridTree *tree, HybridNode *node, int dir);
+HybridNode *rb_delete_fixup(HybridTree *tree, HybridNode *node, int dir);
+HybridNode *rotate(HybridTree *tree, HybridNode *node, int dir);
+HybridNode *double_rotate(HybridTree *tree, HybridNode *node, int dir);
 
 // AVL Balancing Functions
 int max(int a, int b);
