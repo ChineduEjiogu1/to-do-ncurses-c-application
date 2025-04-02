@@ -24,7 +24,7 @@ typedef struct HybridNode {
 
 // Hybrid Tree structure
 typedef struct hybrid_tree {
-    HybridTree *root;
+    HybridNode *root;
     int size;
     int capacity;
 } HybridTree;
