@@ -60,7 +60,7 @@ bool tree_map_is_empty(TreeMap *map);
 
 void print_tree_map_table(TreeMap *map);
 void free_avl_tree(AVLNode *root);
-void free_tree_map(TreeMap *map);
+void free_tree_map(TreeMap*map);
 
 // Interaction Points with HybridTree
 TreeMapStatus insert_into_hybrid_from_treemap(TreeMap *map, int key, Node *node);
