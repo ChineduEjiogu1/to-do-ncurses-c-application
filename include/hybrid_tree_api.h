@@ -35,15 +35,17 @@ HybridNode *create_hybrid_node(int key);
 void destroy_hybrid_tree(HybridTree *tree);
 
 // Insertion and Deletion
-void insert_hybrid(HybridTree *tree, int key);
-void delete_hybrid(HybridTree *tree, int key, Direction dir);
+HybridNode *insert_hybrid(HybridTree *tree, HybridNode *node, int key);
+HybridNode *delete_hybrid(HybridTree *tree, HybridNode *node, int key, Direction dir, bool *fixup_ok);
+void insert_hybrid_public(HybridTree *tree, int key);
+void delete_from_hybrid_tree(HybridTree *tree, int key);
 
 // Searching and Access Count Management
 HybridNode *search_hybrid(HybridTree *tree, int key);
 void increment_access_count(HybridNode *node);
 
 HybridNode *rb_insert_fixup(HybridTree *tree, HybridNode *node, Direction dir);
-HybridNode *rb_delete_fixup(HybridTree *tree, HybridNode *node, Direction dir);
+HybridNode *rb_delete_fixup(HybridTree *tree, HybridNode *node, bool dir, bool *ok);
 HybridNode *rotate(HybridTree *tree, HybridNode *node, Direction dir);
 HybridNode *double_rotate(HybridTree*tree, HybridNode *node, Direction dir);
 void color_flip(HybridNode *node);
@@ -58,8 +60,9 @@ HybridNode *avl_rotate_right(HybridNode *node);
 void rebalance_if_needed(HybridTree *tree, HybridNode *node);
 
 // Utility Functions
-void free_hybrid_tree(HybridNode *root);
+void free_hybrid_tree(HybridNode *node, void (*free_key)(void *));
 void print_hybrid_tree(HybridNode *root, int level);
+void inorder_traversal(HybridNode *node);
 
 // Successor and Predecessor
 HybridNode*find_successor(HybridNode *node);
