@@ -161,6 +161,13 @@ void color_flip(struct HybridNode *node)
     }
 }
 
+void swap_keys(struct HybridNode* a, struct HybridNode* b) 
+{
+    int temp = a->key;
+    a->key = b->key;
+    b->key = temp;
+}
+
 struct HybridNode *rotate(struct HybridTree *tree, struct HybridNode *node, Direction dir)
 {
     struct HybridNode *new_root = node->child[!dir]; // Get child to rotate up
@@ -338,57 +345,14 @@ struct HybridNode *rb_delete_fixup(struct HybridTree *tree, struct HybridNode *n
     return node;
 }
 
-struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok)
+struct HybridNode *find_minimum(struct HybridNode *node)
 {
-    if (node == NULL)
-        return NULL;
-
-    if (key < node->key)
+    while (node->child[0] != NULL)
     {
-        dir = LEFT;
-        node->child[LEFT] = delete_hybrid(tree, node->child[LEFT], key, dir, fixup_ok);
-    }
-    else if (key > node->key)
-    {
-        dir = RIGHT;
-        node->child[RIGHT] = delete_hybrid(tree, node->child[RIGHT], key, dir, fixup_ok);
-    }
-    else
-    {
-        // Node to delete found
-        if (node->child[LEFT] == NULL || node->child[RIGHT] == NULL)
-        {
-            struct HybridNode *temp = node->child[LEFT] ? node->child[LEFT] : node->child[RIGHT];
-
-            // Free current node and return its child (may be NULL)
-            free(node);
-            tree->size--;
-            return temp;
-        }
-        else
-        {
-            // Two children: find inorder successor (min in right subtree)
-            struct HybridNode *successor = find_minimum(node->child[RIGHT]);
-
-            // Copy successor's key to current node
-            node->key = successor->key;
-
-            // Recursively delete the successor node
-            dir = RIGHT;
-            node->child[RIGHT] = delete_hybrid(tree, node->child[RIGHT], successor->key, dir, fixup_ok);
-        }
+        node = node->child[0];
     }
 
-    // Rebalancing
-    node = rebalance_if_needed(tree, node);
-    node = rb_delete_fixup(tree, node, dir, fixup_ok);
     return node;
-}
-
-void delete_from_hybrid_tree(struct HybridTree *tree, int key)
-{
-    bool fixup_ok = false;
-    tree->root = delete_hybrid(tree, tree->root, key, LEFT, &fixup_ok);
 }
 
 struct HybridNode *find_maximum(struct HybridNode *node)
@@ -399,6 +363,64 @@ struct HybridNode *find_maximum(struct HybridNode *node)
     }
 
     return node;
+}
+
+struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok)
+{
+    if (node == NULL)
+        return NULL;
+
+    if (key < node->key) {
+        dir = LEFT;
+        node->child[LEFT] = delete_hybrid(tree, node->child[LEFT], key, dir, fixup_ok);
+    }
+    else if (key > node->key) {
+        dir = RIGHT;
+        node->child[RIGHT] = delete_hybrid(tree, node->child[RIGHT], key, dir, fixup_ok);
+    }
+    else {
+        // Found the node to delete
+        if (node->child[LEFT] == NULL || node->child[RIGHT] == NULL) {
+            // One or no child
+            struct HybridNode *temp = node->child[LEFT] ? node->child[LEFT] : node->child[RIGHT];
+
+            if (!temp) {
+                // No child case
+                free(node);
+                tree->size--;
+                return NULL;
+            } else {
+                // One child case: replace node with its child
+                struct HybridNode *to_free = node;
+                node = temp;
+                free(to_free);
+                tree->size--;
+                return node;
+            }
+        } else {
+            // Node with two children: find inorder successor
+            struct HybridNode *successor = find_minimum(node->child[RIGHT]);
+
+            // Swap keys
+            swap_keys(node, successor);
+
+            // Delete successor (which now holds the key to delete)
+            dir = RIGHT;
+            node->child[RIGHT] = delete_hybrid(tree, node->child[RIGHT], key, dir, fixup_ok);
+        }
+    }
+
+    // Rebalancing
+    node = rebalance_if_needed(tree, node);
+    node = rb_delete_fixup(tree, node, dir, fixup_ok);
+
+    return node;
+}
+
+void delete_from_hybrid_tree(struct HybridTree *tree, int key)
+{
+    bool fixup_ok = false;
+    tree->root = delete_hybrid(tree, tree->root, key, LEFT, &fixup_ok);
 }
 
 struct HybridNode *search_hybrid(struct HybridTree *tree, int key)
@@ -420,16 +442,6 @@ struct HybridNode *search_hybrid(struct HybridTree *tree, int key)
     }
 
     return NULL; // Key not found
-}
-
-struct HybridNode *find_minimum(struct HybridNode *node)
-{
-    while (node->child[0] != NULL)
-    {
-        node = node->child[0];
-    }
-
-    return node;
 }
 
 bool hybrid_tree_is_full(struct HybridTree *tree)
