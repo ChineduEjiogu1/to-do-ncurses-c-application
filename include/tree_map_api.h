@@ -5,6 +5,8 @@
 #include "doubly_linked_list.h"
 #include "hybrid_tree_api.h" // For interaction points
 
+// struct HybridTree HybridTree;  // Forward declaration
+
 #define MAX_TABLE_SIZE 1000
 
 // Status codes for function results
@@ -33,7 +35,7 @@ typedef struct TreeMap {
     int size;
     float load_factor;
     AVLNode **buckets; // Buckets now point to AVL Trees
-    HybridTree *hybrid_tree; // Link to HybridTree for optimized operations
+    struct HybridTree *hybrid_tree; // Link to HybridTree for optimized operations
 } TreeMap;
 
 // TreeMap functions
