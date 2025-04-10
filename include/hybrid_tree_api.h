@@ -5,10 +5,6 @@
 #include "hybrid_tree_api.h"  // To enable interaction with TreeMap
 #include "../include/tree_map_api.h"
 
-// Forward declarations
-// struct HybridNode hybrid_node;
-// struct HybridTree hybrid_tree;
-
 // Define Red-Black tree colors using enum for better readability
 typedef enum { RED, BLACK } Color;
 
@@ -76,6 +72,7 @@ struct HybridNode *find_predecessor(struct HybridNode *node);
 // Minimum and Maximum Key Functions
 struct HybridNode *find_minimum(struct HybridNode *node);
 struct HybridNode *find_maximum(struct HybridNode *node);
+void swap_keys(struct HybridNode* a, struct HybridNode* b);
 
 // Capacity Handling
 bool hybrid_tree_is_full(struct HybridTree *tree);
