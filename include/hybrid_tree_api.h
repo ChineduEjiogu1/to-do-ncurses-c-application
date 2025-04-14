@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "hybrid_tree_api.h"  // To enable interaction with TreeMap
 #include "../include/tree_map_api.h"
+#include "../include/dynamic_array_api.h"
 
 // Define Red-Black tree colors using enum for better readability
 typedef enum { RED, BLACK } Color;
@@ -12,22 +13,26 @@ typedef enum { RED, BLACK } Color;
 typedef enum { LEFT = 0, RIGHT = 1 } Direction;
 
 // Hybrid Node structure combining AVL and Red-Black properties
-struct HybridNode {
+typedef struct HybridNode {
     int key;
     Color color;       // Used for Red-Black balancing
     int height;        // Used for AVL balancing
     int access_count;  // Tracks frequent access for AVL optimizations
-
+    void *value;
     struct HybridNode *parent;
     struct HybridNode *child[2]; // child[LEFT] = left, child[RIGHT] = right
 } HybridNode;
 
 // Hybrid Tree structure
-struct HybridTree {
+typedef struct HybridTree {
     struct HybridNode *root;
     int size;
     int capacity;
 } HybridTree;
+
+// At the top of hybrid_tree_api.h
+typedef struct DynamicArray DynamicArray;
+typedef struct TreeMap TreeMap;
 
 // Core Functions
 struct HybridTree *create_hybrid_tree(int capacity);
@@ -35,10 +40,13 @@ struct HybridNode *create_hybrid_node(int key);
 void destroy_hybrid_tree(struct HybridTree *tree);
 
 // Insertion and Deletion
-struct HybridNode *insert_hybrid(struct HybridTree *tree, struct HybridNode *node, int key);
+struct HybridNode* insert_hybrid(struct HybridTree* tree, struct HybridNode* node, int key, Direction dir, bool* fixup_ok);
 struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok);
-void insert_hybrid_public(struct HybridTree *tree, int key);
+void insert_hybrid_public(struct HybridTree *tree, int key, bool *inserted);
 void delete_from_hybrid_tree(struct HybridTree *tree, int key);
+void range_query(struct HybridNode *node, int low, int high, DynamicArray *result);
+void range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result);
+void in_order_range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result);
 
 // Searching and Access Count Management
 struct HybridNode *search_hybrid(struct HybridTree *tree, int key);

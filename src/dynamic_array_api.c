@@ -1,60 +1,67 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "include/dynamic_array_api.h"
+#include "../include/dynamic_array_api.h"
 
-// Core Functions
 DynamicArray *create_dynamic_array(int capacity)
 {
     if (capacity <= 0)
     {
-        return NULL;
+        capacity = 4; // Fallback to default minimum capacity
     }
 
     DynamicArray *new_array = (DynamicArray *)malloc(sizeof(DynamicArray));
-
     if (!new_array)
     {
-        printf("Memory allocation failed for Dynamic array.\n");
+        printf("Error: Memory allocation failed for DynamicArray struct.\n");
         return NULL;
     }
 
+    new_array->items = (struct HybridNode **)calloc(capacity, sizeof(struct HybridNode *));
     if (!new_array->items)
     {
-        printf("Memory allocation failed for array items.\n");
+        printf("Error: Memory allocation failed for DynamicArray items.\n");
+        free(new_array); // Clean up struct if items allocation fails
         return NULL;
     }
 
-    for (int i = 0; i < capacity; i++)
-    {
-        new_array->items[i] = capacity;
-    }
-
-    new_array->capacity = capacity;
     new_array->size = 0;
+    new_array->capacity = capacity;
 
     return new_array;
 }
 
-bool insert_into_dynamic_array(DynamicArray *array, Node *node)
+// Core Functions
+bool insert_into_dynamic_array(DynamicArray *array, struct HybridNode *node)
 {
     if (!array || !node)
     {
-        return false; // Handle invalid input
+        printf("Error: NULL input to insert_into_dynamic_array\n");
+        return false;
     }
 
-    // Resize if necessary
-    if (array->size == array->capacity)
+    // Initialize capacity if needed
+    if (array->capacity == 0)
     {
-        if (!resize_dynamic_array(array, array->capacity * 2))
+        if (!resize_dynamic_array(array, 4)) // Start with minimum capacity
         {
-            return false; // Resize failed
+            printf("Error: Failed to initialize array capacity\n");
+            return false;
         }
     }
 
-    // Insert the new node
-    array->items[array->size] = node;
-    array->size++;
+    // Resize if full
+    if (array->size >= array->capacity)
+    {
+        int new_capacity = array->capacity * 2;
+        if (!resize_dynamic_array(array, new_capacity))
+        {
+            printf("Error: Failed to resize dynamic array to %d\n", new_capacity);
+            return false;
+        }
+    }
+
+    array->items[array->size++] = node;
 
     return true;
 }
@@ -63,20 +70,20 @@ bool remove_from_dynamic_array(DynamicArray *array, int index)
 {
     if (!array || array->size == 0)
     {
-        printf("Error: Array is empty\n");
+        printf("Error: Cannot remove from an empty array.\n");
         return false;
     }
 
     if (index < 0 || index >= array->size)
     {
-        printf("Error: Index %d out of bounds\n", index);
+        printf("Error: Index %d is out of bounds (size: %d).\n", index, array->size);
         return false;
     }
 
-    // Free the element at the given index (if needed)
+    // Optional: Clear the element at index (especially if it owns heap memory)
     array->items[index] = NULL;
 
-    // Shift elements to fill the gap
+    // Shift elements only if not removing the last element
     for (int i = index; i < array->size - 1; i++)
     {
         array->items[i] = array->items[i + 1];
@@ -84,8 +91,8 @@ bool remove_from_dynamic_array(DynamicArray *array, int index)
 
     array->size--;
 
-    // Shrink array if it's too empty (optional)
-    if (array->size > 0 && array->size < array->capacity / 4)
+    // Optionally shrink the capacity, but not too small
+    if (array->capacity > 4 && array->size < array->capacity / 4)
     {
         resize_dynamic_array(array, array->capacity / 2);
     }
@@ -93,7 +100,7 @@ bool remove_from_dynamic_array(DynamicArray *array, int index)
     return true;
 }
 
-Node *get_from_dynamic_array(DynamicArray *array, int index)
+struct HybridNode *get_from_dynamic_array(DynamicArray *array, int index)
 {
     if (!array || index < 0 || index >= array->size)
     {
@@ -135,25 +142,20 @@ void clear_dynamic_array(DynamicArray *array)
 bool resize_dynamic_array(DynamicArray *array, int new_capacity)
 {
     if (!array || new_capacity <= array->size)
-    {
         return false;
-    }
 
-    Node **new_data = (Node **)malloc(new_capacity * sizeof(Node));
-
+    struct HybridNode **new_data = (struct HybridNode **)malloc(new_capacity * sizeof(struct HybridNode *));
     if (!new_data)
-    {
         return false;
-    }
 
     for (int i = 0; i < array->size; i++)
-    {
         new_data[i] = array->items[i];
-    }
 
     free(array->items);
     array->items = new_data;
     array->capacity = new_capacity;
+
+    return true; // <- Add this
 }
 
 bool is_dynamic_array_empty(DynamicArray *array)

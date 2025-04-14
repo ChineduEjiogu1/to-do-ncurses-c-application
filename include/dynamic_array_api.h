@@ -2,20 +2,21 @@
 #define DYNAMIC_ARRAY_H
 
 #include "doubly_linked_list.h"
+#include "hybrid_tree_api.h"
 #include <stdbool.h>
 
 typedef struct DynamicArray 
 {
-    Node **items;  // Array of pointers to linked list nodes
+    struct HybridNode **items;  // Array of pointers to linked list nodes
     int capacity;  // Total allocated capacity
     int size;      // Current number of elements
 } DynamicArray;
 
 // Core Functions
 DynamicArray *create_dynamic_array(int capacity);
-bool insert_into_dynamic_array(DynamicArray *array, Node *node);
+bool insert_into_dynamic_array(DynamicArray *array, struct HybridNode *node);
 bool remove_from_dynamic_array(DynamicArray *array, int index);
-Node *get_from_dynamic_array(DynamicArray *array, int index);
+struct HybridNode *get_from_dynamic_array(DynamicArray *array, int index);
 void free_dynamic_array(DynamicArray *array);
 void clear_dynamic_array(DynamicArray *array);
 

@@ -1,155 +1,85 @@
-#include "tree_map_api.h"
+// tree_map.c
+
 #include <stdlib.h>
-#include <stdbool.h>
+#include "tree_map_api.h"
 
-#define LOAD_FACTOR_THRESHOLD 2.0
+TreeMap *create_tree_map() {
+    TreeMap *map = malloc(sizeof(TreeMap));
+    if (!map) return NULL;
 
-TreeMap *create_tree_map(int capacity)
+    map->tree = create_hybrid_tree(1000);  // You'll need this function
+    return map;
+}
+
+bool tree_map_insert(TreeMap *map, int key) {
+    if (!map || !map->tree) return false;
+
+    bool inserted = false;
+    insert_hybrid_public(map->tree, key, &inserted);
+    return inserted;
+}
+
+bool tree_map_delete(TreeMap *map, int key) {
+    if (!map || !map->tree) return;
+
+    delete_from_hybrid_tree(map->tree, key);
+}
+
+bool tree_map_search(TreeMap *map, int key) {
+    if (!map || !map->tree) return false;
+
+    return (search_hybrid(map->tree->root, key) != NULL);
+}
+
+void tree_map_print(TreeMap* map) 
 {
-    TreeMap *tree_map = (TreeMap *)malloc(sizeof(TreeMap));
+    print_tree(map->tree->root, 0);
+}
 
-    if (!tree_map)
-    {
-        printf("Memory allocation failed for initializing tree map. \n");
-        return NULL;
+void tree_map_range_query(TreeMap *map, int low, int high, DynamicArray *result) {
+    if (!map || !map->tree) return;
+
+    printf("Keys in range [%d, %d]: ", low, high);
+    range_query(map->tree->root, low, high, result);
+
+    printf("\n");
+}
+
+void free_tree_map(TreeMap *map) {
+    if (!map) return;
+
+    if (map->tree) {
+        free_hybrid_tree(map->tree->root, NULL); // or pass a free_key function if needed
+        free(map->tree); // free the HybridTree struct itself
     }
 
-    tree_map->capacity = capacity;
-    tree_map->load_factor = LOAD_FACTOR_THRESHOLD;
-    tree_map->size = 0;
+    free(map);
+}
 
-    tree_map->buckets = (AVLNode **)calloc(tree_map->capacity, sizeof(AVLNode *));
+int main() {
+    TreeMap *map = create_tree_map();
 
-    if (!tree_map->buckets)
-    {
-        printf("Memory allocation failed for initializing buckets. \n");
-        free(tree_map);
-        return NULL;
+    tree_map_insert(map, 5);
+    tree_map_insert(map, 3);
+    tree_map_insert(map, 9);
+    tree_map_insert(map, 8);
+
+    tree_map_print(map);
+
+    DynamicArray *range = create_dynamic_array(10);
+    tree_map_range_query(map, 4, 10, range);
+
+    printf("Range query result:\n");
+    for (int i = 0; i < range->size; i++) {
+        printf("%d ", range->items[i]->key);
     }
+    printf("\n");
 
-    return tree_map;
-}
+    tree_map_delete(map, 3);
+    printf("After deletion:\n");
+    tree_map_print(map);
 
-AVLNode *create_avl_node(int key, Node *node)
-{
-    AVLNode *avl_node = (AVLNode *)malloc(sizeof(AVLNode));
-
-    if (!avl_node)
-    {
-        printf("Memory allocation failed for initializing AVL node.\n");
-        return NULL;
-    }
-
-    avl_node->key = key;
-    avl_node->height = 1;
-    avl_node->left = avl_node->right = NULL;
-    avl_node->node = node;
-
-    return avl_node;
-}
-
-int hash_function(int capacity, int key)
-{
-    unsigned int hash = (unsigned int)key;
-    hash = (hash * 2654435761) % capacity; // Knuth's Multiplicative Method
-    return (int)hash;
-}
-
-bool needs_resizing(TreeMap *map)
-{
-    if((float)map->size / map->capacity >= LOAD_FACTOR_THRESHOLD)
-    {
-        return true;
-    } 
-    else
-    {
-        return false;
-    }
-}
-
-TreeMapStatus resize_tree_map(TreeMap *map)
-{
-
-}
-
-TreeMapStatus insert_into_tree_map(TreeMap *map, int key, Node *node)
-{
-
-}
-
-TreeMapStatus delete_from_tree_map(TreeMap *map, int key)
-{
-
-}
-
-TreeMapStatus search_in_tree_map(TreeMap *map, int key, Node **result)
-{
-
-}
-
-TreeMapStatus insert_into_hybrid_from_treemap(TreeMap *map, int key, Node *node)
-{
-
-}
-
-TreeMapStatus delete_from_hybrid_via_treemap(TreeMap *map, int key)
-{
-
-}
-
-TreeMapStatus search_in_hybrid_from_treemap(TreeMap *map, int key, Node **result)
-{
-
-}
-
-AVLNode *insert_into_avl(AVLNode *root, int key, Node *node)
-{
-
-}
-
-AVLNode *delete_from_avl(AVLNode *root, int key)
-{
-
-}
-
-AVLNode *find_avl_node(AVLNode *root, int key)
-{
-
-}
-
-int tree_map_size(TreeMap *map)
-{
-    if (!map)
-    {
-        printf("Tree map is NULL.\n");
-        return -1; // Indicates an error
-    }
-
-    return map->size;
-}
-
-bool tree_map_is_empty(TreeMap *map)
-{
-    if (!map)
-    {
-        printf("Tree map is NULL.\n");
-        return true; // Consider an invalid map as empty
-    }
-
-    return map->size == 0;
-}
-
-void print_tree_map_table(TreeMap *map)
-{
-
-}
-
-void free_avl_tree(AVLNode *root)
-{
-
-}
-
-void free_tree_map(TreeMap *map)
-{
-
+    free_dynamic_array(range);
+    free_tree_map(map);
+    return 0;
 }
