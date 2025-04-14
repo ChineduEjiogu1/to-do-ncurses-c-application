@@ -1,7 +1,9 @@
 #ifndef DYNAMIC_ARRAY_H
 #define DYNAMIC_ARRAY_H
 
-#include "doubly_linked_list.h"
+#include "../include/dynamic_array_api.h"
+#include "../include/hybrid_tree_api.h"
+
 #include "hybrid_tree_api.h"
 #include <stdbool.h>
 

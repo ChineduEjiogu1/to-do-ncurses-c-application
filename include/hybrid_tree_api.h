@@ -2,9 +2,11 @@
 #define HYBRID_TREE_MAP_H
 
 #include <stdbool.h>
-#include "hybrid_tree_api.h"  // To enable interaction with TreeMap
+#include "../include/hybrid_tree_api.h"
 #include "../include/tree_map_api.h"
-#include "../include/dynamic_array_api.h"
+
+struct HashMapWithTree; // Forward declaration
+struct DynamicArray;    // Forward declaration
 
 // Define Red-Black tree colors using enum for better readability
 typedef enum { RED, BLACK } Color;
@@ -34,6 +36,10 @@ typedef struct HybridTree {
 typedef struct DynamicArray DynamicArray;
 typedef struct TreeMap TreeMap;
 
+// Forward declaration of HashMapWithTree
+struct HashMapWithTree;
+
+
 // Core Functions
 struct HybridTree *create_hybrid_tree(int capacity);
 struct HybridNode *create_hybrid_node(int key);
@@ -44,7 +50,6 @@ struct HybridNode* insert_hybrid(struct HybridTree* tree, struct HybridNode* nod
 struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok);
 void insert_hybrid_public(struct HybridTree *tree, int key, bool *inserted);
 void delete_from_hybrid_tree(struct HybridTree *tree, int key);
-void range_query(struct HybridNode *node, int low, int high, DynamicArray *result);
 void range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result);
 void in_order_range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result);
 
@@ -88,7 +93,8 @@ bool hybrid_tree_is_full(struct HybridTree *tree);
 // --- Integration Points with TreeMap --- //
 
 // Inserts a TreeMap key into the HybridTree for faster access
-struct HybridNode *tree_map_insert_hybrid(TreeMap *map, struct HybridTree *tree, int key);
+// In hybrid_tree_api.h
+struct HybridNode *tree_map_insert_hybrid(struct HashMapWithTree *map, struct HybridTree *tree, int key);
 
 // Deletes a TreeMap key from the HybridTree
 void tree_map_delete_hybrid(TreeMap *map, struct HybridTree *tree, int key);

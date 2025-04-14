@@ -14,8 +14,8 @@
 #include <stdio.h>
 
 #include "../include/hybrid_tree_api.h"
-#include "../include/dynamic_array_api.h"
-#include "../include/tree_map_api.h"
+// #include "../include/dynamic_array_api.h"
+// #include "../include/tree_map_api.h"
 
 #define IS_RED(n) ((n) != NULL && (n)->color == RED)
 
@@ -599,28 +599,19 @@ void free_hybrid_tree(struct HybridNode *node, void (*free_key)(void *))
     free(node);
 }
 
-struct HybridNode *tree_map_insert_hybrid(TreeMap *map, struct HybridTree *tree, int key)
-{
-    if (!tree || !map)
-        return NULL;
 
-    Direction dir = LEFT;
-    bool fixup_ok = false;
-    bool was_inserted = false; // Renamed to avoid conflict
+// Function definition (ensure this matches your header declaration)
+struct HybridNode *tree_map_insert_hybrid(struct HashMapWithTree *map, struct HybridTree *tree, int key) {
+    // Ensure map is valid
+    if (!map) return NULL;
 
-    // Insert into the HybridTree
-    tree->root = insert_hybrid(tree, tree->root, key, dir, &fixup_ok);
+    // Calculate the index using the hash function
+    unsigned int index = hash(key, map->capacity); // Ensure you have a valid hash function
 
-    // Search for the newly inserted node
-    struct HybridNode *inserted_node = search_hybrid(tree, key); // Renamed
+    bool was_inserted = false;
 
-    // Only increase size if node is new
-    if (inserted_node)
-    {
-        insert_hybrid_public(map->tree, key, &was_inserted); // Correct type for 3rd param
-    }
-
-    return inserted_node;
+    // Insert into the corresponding HybridTree (bucket)
+    insert_hybrid_public(map->buckets[index], key, &was_inserted);
 }
 
 // Deletes a TreeMap key from the HybridTree
@@ -701,56 +692,56 @@ void treemap_range_query(struct HybridTree *tree, int low, int high)
     free_dynamic_array(result);
 }
 
-int main()
-{
-    // Create a new hybrid tree with initial capacity of 100
-    struct HybridTree *tree = create_hybrid_tree(100);
-    if (!tree)
-    {
-        fprintf(stderr, "Failed to create hybrid tree\n");
-        return 1;
-    }
+// int main()
+// {
+//     // Create a new hybrid tree with initial capacity of 100
+//     struct HybridTree *tree = create_hybrid_tree(100);
+//     if (!tree)
+//     {
+//         fprintf(stderr, "Failed to create hybrid tree\n");
+//         return 1;
+//     }
 
-    // Insert some test values
-    printf("Inserting values into the tree...\n");
-    bool inserted = false;
-    insert_hybrid_public(tree, 5, &inserted);
-    insert_hybrid_public(tree, 2, &inserted);
-    insert_hybrid_public(tree, 8, &inserted);
-    insert_hybrid_public(tree, 3, &inserted);
-    insert_hybrid_public(tree, 9, &inserted);
+//     // Insert some test values
+//     printf("Inserting values into the tree...\n");
+//     bool inserted = false;
+//     insert_hybrid_public(tree, 5, &inserted);
+//     insert_hybrid_public(tree, 2, &inserted);
+//     insert_hybrid_public(tree, 8, &inserted);
+//     insert_hybrid_public(tree, 3, &inserted);
+//     insert_hybrid_public(tree, 9, &inserted);
 
-    // Print the tree structure
-    printf("\nTree structure:\n");
-    print_tree(tree->root, 0);
+//     // Print the tree structure
+//     printf("\nTree structure:\n");
+//     print_tree(tree->root, 0);
 
-    // Search for a value
-    printf("\nSearching for key 8...\n");
-    struct HybridNode *found = search_hybrid(tree, 8);
-    if (found)
-    {
-        printf("Found node with key %d (color: %s)\n",
-               found->key,
-               found->color == RED ? "RED" : "BLACK");
-    }
+//     // Search for a value
+//     printf("\nSearching for key 8...\n");
+//     struct HybridNode *found = search_hybrid(tree, 8);
+//     if (found)
+//     {
+//         printf("Found node with key %d (color: %s)\n",
+//                found->key,
+//                found->color == RED ? "RED" : "BLACK");
+//     }
 
-    // Delete a value
-    printf("\nDeleting key 2...\n");
-    delete_from_hybrid_tree(tree, 2);
+//     // Delete a value
+//     printf("\nDeleting key 2...\n");
+//     delete_from_hybrid_tree(tree, 2);
 
-    // Print updated tree
-    printf("\nTree after deletion:\n");
-    print_tree(tree->root, 0);
+//     // Print updated tree
+//     printf("\nTree after deletion:\n");
+//     print_tree(tree->root, 0);
 
-    DynamicArray *result = create_dynamic_array(100);
+//     DynamicArray *result = create_dynamic_array(100);
 
-    treemap_range_query(tree, 3, 8);
+//     treemap_range_query(tree, 3, 8);
 
-    printf("\n");
+//     printf("\n");
 
-    free_dynamic_array(result);
+//     free_dynamic_array(result);
 
-    // Clean up
-    destroy_hybrid_tree(tree);
-    return 0;
-}
+//     // Clean up
+//     destroy_hybrid_tree(tree);
+//     return 0;
+// }
