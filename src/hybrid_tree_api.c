@@ -8,14 +8,14 @@
 // https://www.youtube.com/watch?v=ZxDruXbksR4&list=PLxsP6a6cqUZjtci4kJePNkF53As7J_2_L&index=3
 // https://www.youtube.com/watch?v=qvZGUFHWChY
 // https://www.youtube.com/watch?v=5IBxA-bZZH8
+// https://medium.com/basecs/painting-nodes-black-with-red-black-trees-60eacb2be9a5
+// https://medium.com/basecs/the-little-avl-tree-that-could-86a3cae410c7
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "../include/hybrid_tree_api.h"
-// #include "../include/dynamic_array_api.h"
-// #include "../include/tree_map_api.h"
 
 #define IS_RED(n) ((n) != NULL && (n)->color == RED)
 
@@ -42,7 +42,7 @@ struct HybridTree *create_hybrid_tree(int capacity)
 
 struct HybridNode *create_hybrid_node(int key)
 {
-    struct HybridNode *node = (struct HybridNode *)malloc(sizeof(HybridNode));
+    struct HybridNode *node = (struct HybridNode *)malloc(sizeof(struct HybridNode));
 
     if (!node)
     {
@@ -599,19 +599,16 @@ void free_hybrid_tree(struct HybridNode *node, void (*free_key)(void *))
     free(node);
 }
 
-
-// Function definition (ensure this matches your header declaration)
 struct HybridNode *tree_map_insert_hybrid(struct HashMapWithTree *map, struct HybridTree *tree, int key) {
-    // Ensure map is valid
     if (!map) return NULL;
 
-    // Calculate the index using the hash function
-    unsigned int index = hash(key, map->capacity); // Ensure you have a valid hash function
-
+    unsigned int index = hash(key, map->capacity);
     bool was_inserted = false;
 
-    // Insert into the corresponding HybridTree (bucket)
     insert_hybrid_public(map->buckets[index], key, &was_inserted);
+
+    // Return the inserted node by searching for it
+    return search_hybrid(map->buckets[index], key);
 }
 
 // Deletes a TreeMap key from the HybridTree

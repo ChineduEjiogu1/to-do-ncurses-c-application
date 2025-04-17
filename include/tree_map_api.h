@@ -19,15 +19,14 @@ typedef struct HashMapWithTree {
 
 
 // Function declarations
-HashMapWithTree *create_tree_map(int capacity);
+HashMapWithTree *create_tree_map(int map_capacity, int tree_capacity);
 unsigned int hash(int key, int capacity);  // Create a new tree map
-bool tree_map_insert(HashMapWithTree *map, int key);  // Insert key into the tree map
+bool tree_map_insert(HashMapWithTree *map, int key); // Insert key into the tree map
 bool tree_map_delete(HashMapWithTree *map, int key);  // Delete key from the tree map
-void destroy_tree_map(HashMapWithTree* map);
 void free_tree_map(HashMapWithTree *map);  // Free all resources of the tree map
 bool tree_map_search(HashMapWithTree *map, int key);  // Search for a key in the tree map
 void tree_map_print(HashMapWithTree *map);  // Print the tree map (all buckets)
-void tree_map_range_query(struct HashMapWithTree *map, int low, int high, DynamicArray *result);
+void tree_map_range_query_ordered(HashMapWithTree *map, int low, int high, DynamicArray *result);  // Range query for the tree map
  // Range query for the tree map
 
 #endif // TREE_MAP_H

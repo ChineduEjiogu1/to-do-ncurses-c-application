@@ -1,36 +1,60 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "../include/tree_map_api.h"
-#include "../include/dynamic_array_api.h"
+#include <stdlib.h>  // for qsort
+#include "../include/hybrid_tree_api.h"
 
-// Simple hash function for integer keys (updated to take capacity)
-unsigned int hash(int key, int capacity) {
-    return key % capacity;
+// Basic hash function (Knuth's variant)
+unsigned int hash(int key, int capacity)
+{
+    unsigned int knuth = (unsigned int)key * 2654435761u;
+    return knuth % capacity;
 }
 
-// Create a new HashMap with HybridTrees as buckets
-HashMapWithTree *create_tree_map(int capacity) {
+// Create a new hash map with given capacity
+HashMapWithTree *create_tree_map(int map_capacity, int tree_capacity)
+{
     HashMapWithTree *map = (HashMapWithTree *)malloc(sizeof(HashMapWithTree));
     if (!map)
+    {
+        fprintf(stderr, "Memory allocation failed for HashMapWithTree.\n");
         return NULL;
+    }
 
-    map->capacity = capacity;
-    map->buckets = (struct HybridTree **)malloc(sizeof(struct HybridTree *) * capacity);
-    if (!map->buckets) {
+    map->capacity = map_capacity;
+    map->buckets = (HybridTree **)malloc(sizeof(HybridTree *) * map_capacity);
+    if (!map->buckets)
+    {
+        fprintf(stderr, "Memory allocation failed for buckets.\n");
         free(map);
         return NULL;
     }
 
-    for (int i = 0; i < capacity; i++) {
-        map->buckets[i] = create_hybrid_tree(20);  // You can change this tree capacity
+    for (int i = 0; i < map_capacity; i++)
+    {
+        map->buckets[i] = create_hybrid_tree(tree_capacity);
+        if (!map->buckets[i])
+        {
+            fprintf(stderr, "Failed to create HybridTree at index %d.\n", i);
+            
+            // Clean up previously created HybridTrees to avoid memory leaks
+            for (int j = 0; j < i; j++)
+            {
+                free_hybrid_tree(map->buckets[j]->root, NULL);
+            }
+
+            free(map->buckets);
+            free(map);
+            return NULL;  // Return NULL after cleanup
+        }
     }
 
     return map;
 }
 
-// Insert a key-value pair into the HashMap
-bool tree_map_insert(HashMapWithTree *map, int key) {
+// Insert key into the tree map
+bool tree_map_insert(HashMapWithTree *map, int key)
+{
     if (!map)
         return false;
 
@@ -40,8 +64,9 @@ bool tree_map_insert(HashMapWithTree *map, int key) {
     return inserted;
 }
 
-// Delete a key from the HashMap
-bool tree_map_delete(HashMapWithTree *map, int key) {
+// Delete a key from the tree map
+bool tree_map_delete(HashMapWithTree *map, int key)
+{
     if (!map)
         return false;
 
@@ -50,88 +75,85 @@ bool tree_map_delete(HashMapWithTree *map, int key) {
     return true;
 }
 
-// Search for a key in the HashMap
-bool tree_map_search(HashMapWithTree *map, int key) {
+// Search for a key in the tree map
+bool tree_map_search(HashMapWithTree *map, int key)
+{
     if (!map)
         return false;
 
     unsigned int index = hash(key, map->capacity);
-    return (search_hybrid(map->buckets[index], key) != NULL);
+    return search_hybrid(map->buckets[index], key) != NULL;
 }
 
-// Print the entire HashMap (all buckets)
-void tree_map_print(HashMapWithTree *map) {
-    if (!map) return;
+// Print the TreeMap
+void tree_map_print(HashMapWithTree *map)
+{
+    if (!map)
+        return;
 
-    for (int i = 0; i < map->capacity; i++) {
+    for (int i = 0; i < map->capacity; i++)
+    {
         printf("Bucket %d:\n", i);
-        print_hybrid_tree(map->buckets[i]->root, 0);
+        if (map->buckets[i] && map->buckets[i]->root)
+            print_hybrid_tree(map->buckets[i]->root, 0);
+        else
+            printf("(empty)\n");
     }
 }
 
-// Perform a range query on the entire HashMap
-void tree_map_range_query(struct HashMapWithTree *map, int low, int high, DynamicArray *result) {
+int compare_nodes(const void *a, const void *b) {
+    const HybridNode *na = *(const HybridNode **)a;
+    const HybridNode *nb = *(const HybridNode **)b;
+    return na->key - nb->key;
+}
+
+// Perform range query across all HybridTrees in the map
+void tree_map_range_query_ordered(HashMapWithTree *map, int low, int high, DynamicArray *result) {
     if (!map) return;
 
-    printf("Keys in range [%d, %d]: ", low, high);
-    
     for (int i = 0; i < map->capacity; i++) {
         range_query(map->buckets[i]->root, low, high, result);
     }
 
-    printf("\n");
+    qsort(result->items, result->size, sizeof(HybridNode *), compare_nodes);
 }
 
-// Free the HashMap and all its resources
-void free_tree_map(HashMapWithTree *map) {
+// Free the map and its contents
+void free_tree_map(HashMapWithTree *map)
+{
     if (!map)
         return;
 
-    for (int i = 0; i < map->capacity; i++) {
-        free_hybrid_tree(map->buckets[i]->root, NULL);
-        free(map->buckets[i]);
+    // Loop through each bucket and free the HybridTree and its root
+    for (int j = 0; j < map->capacity; j++) {
+        free_hybrid_tree(map->buckets[j]->root, NULL);  // Pass NULL if no callback is needed
+        free(map->buckets[j]);  // Free the bucket (HybridTree pointer itself)
     }
 
-    free(map->buckets);
-    free(map);
+    free(map->buckets);  // Free the array of bucket pointers
+    free(map);  // Finally, free the main map structure
 }
 
-// int main() {
-//     // Create a HashMap with HybridTree buckets
-//     HashMapWithTree *map = create_tree_map(20);
+int main() 
+{
+    HashMapWithTree *map = create_tree_map(20, 50); // 20 buckets, each HybridTree with capacity 50
 
-//     // Insert some keys
-//     tree_map_insert(map, 5);
-//     tree_map_insert(map, 3);
-//     tree_map_insert(map, 9);
-//     tree_map_insert(map, 8);
-//     tree_map_insert(map, 12);
-//     tree_map_insert(map, 18);
-//     tree_map_insert(map, 5);
-//     tree_map_insert(map, 11);
+    tree_map_insert(map, 10);
+    tree_map_insert(map, 30);
+    tree_map_insert(map, 5);
 
-//     // Print the entire map
-//     tree_map_print(map);
+    tree_map_print(map);
 
-//     // Perform a range query
-//     DynamicArray *range = create_dynamic_array(10);
-//     tree_map_range_query(map, 4, 10, range);
+    DynamicArray *result = create_dynamic_array(10);
+    tree_map_range_query_ordered(map, 5, 35, result);
 
-//     // Print the range query results
-//     printf("Range query result:\n");
-//     for (int i = 0; i < range->size; i++) {
-//         printf("%d ", range->items[i]->key);
-//     }
-//     printf("\n");
+    printf("Result keys:\n");
+    for (int i = 0; i < result->size; i++) {
+        printf("%d ", result->items[i]->key);
+    }
+    printf("\n");
 
-//     // Delete a key
-//     tree_map_delete(map, 3);
-//     printf("After deletion:\n");
-//     tree_map_print(map);
-
-//     // Free resources
-//     free_dynamic_array(range);
-//     free_tree_map(map);
-
-//     return 0;
-// }
+    free_dynamic_array(result);
+    free_tree_map(map);
+    return 0;
+}
