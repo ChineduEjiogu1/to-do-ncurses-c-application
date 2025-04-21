@@ -10,6 +10,7 @@ typedef struct Node
 
 typedef struct Data
 {
+    void *key;
     void* value;
 }Data;
 
@@ -41,9 +42,9 @@ Node *insert_after(DoublyLinkedList *list, Node *previous_node, struct Data *dat
 
 Node *insert_before(DoublyLinkedList *list, Node* next_node, struct Data *data);
 
-Node *delete_by_value(DoublyLinkedList *list, int target_value);
+Node *delete_by_value(DoublyLinkedList *list, void *target_value);
 
-Node *search_list(DoublyLinkedList *list, int target_value);
+Node *search_list(DoublyLinkedList *list, void *target_value);
 
 void traverse_forward(DoublyLinkedList *list);
 

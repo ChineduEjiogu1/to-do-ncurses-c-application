@@ -7,6 +7,9 @@
 #include "../include/hybrid_tree_api.h"
 
 typedef struct DynamicArray DynamicArray;
+typedef struct HybridTree HybridTree;
+typedef struct HybridNode HybridNode;
+
 
 // Define the number of buckets in the hash map
 #define BUCKET_SIZE 1000
@@ -21,12 +24,15 @@ typedef struct HashMapWithTree {
 // Function declarations
 HashMapWithTree *create_tree_map(int map_capacity, int tree_capacity);
 unsigned int hash(int key, int capacity);  // Create a new tree map
-bool tree_map_insert(HashMapWithTree *map, int key); // Insert key into the tree map
+bool tree_map_insert(HashMapWithTree *map, int key, void *value); // Insert key into the tree map
 bool tree_map_delete(HashMapWithTree *map, int key);  // Delete key from the tree map
 void free_tree_map(HashMapWithTree *map);  // Free all resources of the tree map
-bool tree_map_search(HashMapWithTree *map, int key);  // Search for a key in the tree map
+HybridNode *tree_map_search(HashMapWithTree *map, int key); // Search for a key in the tree map
 void tree_map_print(HashMapWithTree *map);  // Print the tree map (all buckets)
 void tree_map_range_query_ordered(HashMapWithTree *map, int low, int high, DynamicArray *result);  // Range query for the tree map
+void free_tree_map(HashMapWithTree *map);
+void print_range_query_result(DynamicArray *result);
+void perform_range_query_and_print(HybridTree *tree, int low, int high);
  // Range query for the tree map
 
 #endif // TREE_MAP_H

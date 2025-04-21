@@ -1,35 +1,42 @@
 #ifndef LRU_CACHE_H
 #define LRU_CACHE_H
 
-#include "doubly_linked_list.h"
-#include "tree_map_api.h"  // To connect with TreeMap
-#include "hybrid_tree_api.h"  // To connect with HybridTree
+#include "../include/lru_cache_api.h"
+#include "../include/doubly_linked_list.h"
+#include "../include/tree_map_api.h"
 
 // LRU Cache Node
 typedef struct LRUNode {
-    int key;
-    Node *data; // Pointer to task or appointment data
-    struct LRUNode *prev;
-    struct LRUNode *next;
+    void *key;
+    void *value;
 } LRUNode;
 
-// LRU Cache Structure
 typedef struct LRUCache {
     int capacity;
     int size;
-    LRUNode *head;
-    LRUNode *tail;
-    TreeMap *map; // Quick access using the existing TreeMap
+    DoublyLinkedList *dll;        // Stores LRU order (front = most recent)
+    HashMapWithTree *map;                 // Maps key -> DLL node
 } LRUCache;
+
 
 // Core Functions
 LRUCache *create_lru_cache(int capacity);
+void insert_new(LRUCache *cache, void *key, void *value);
+bool lru_contains(LRUCache *cache, void *key);
+
+void evict_lru(LRUCache *cache);
+void insert_new(LRUCache *cache, void *key, void *value);
+void *lru_get(LRUCache *cache, void *key);
+
+void *lru_get(LRUCache *cache, void *key);
+void lru_put(LRUCache *cache, void *key, void *value);
+
+bool lru_contains(LRUCache *cache, void *key);
+int lru_size(LRUCache *cache);
+void lru_print(LRUCache *cache);
+bool is_full_lru(LRUCache *cache);
+bool is_empty_lru(LRUCache *cache);
+int list_size_lru(LRUCache *cache);
+
 void free_lru_cache(LRUCache *cache);
-
-// Cache Operations
-void access_lru_cache(LRUCache *cache, int key, Node *data);
-Node *get_from_lru_cache(LRUCache *cache, int key);
-void remove_lru_node(LRUCache *cache, LRUNode *node);
-void move_to_front(LRUCache *cache, LRUNode *node);
-
 #endif // LRU_CACHE_H

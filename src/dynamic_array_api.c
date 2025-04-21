@@ -32,7 +32,7 @@ DynamicArray *create_dynamic_array(int capacity)
 }
 
 // Core Functions
-bool insert_into_dynamic_array(DynamicArray *array, struct HybridNode *node)
+bool insert_into_dynamic_array(DynamicArray *array, HybridNode *node)
 {
     if (!array || !node)
     {
@@ -40,29 +40,19 @@ bool insert_into_dynamic_array(DynamicArray *array, struct HybridNode *node)
         return false;
     }
 
-    // Initialize capacity if needed
-    if (array->capacity == 0)
+    if (array->capacity == 0 && !resize_dynamic_array(array, 4))
     {
-        if (!resize_dynamic_array(array, 4)) // Start with minimum capacity
-        {
-            printf("Error: Failed to initialize array capacity\n");
-            return false;
-        }
+        printf("Error: Failed to initialize array capacity\n");
+        return false;
     }
 
-    // Resize if full
-    if (array->size >= array->capacity)
+    if (array->size >= array->capacity && !resize_dynamic_array(array, array->capacity * 2))
     {
-        int new_capacity = array->capacity * 2;
-        if (!resize_dynamic_array(array, new_capacity))
-        {
-            printf("Error: Failed to resize dynamic array to %d\n", new_capacity);
-            return false;
-        }
+        printf("Error: Failed to resize dynamic array\n");
+        return false;
     }
 
     array->items[array->size++] = node;
-
     return true;
 }
 

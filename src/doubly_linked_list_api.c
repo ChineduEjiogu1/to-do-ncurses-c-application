@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "doubly_linked_list.h"
-#include "tree_map_api.h"
+#include <string.h>
+#include "../include/doubly_linked_list.h"
+#include "../include/tree_map_api.h"
 
 #define MAX_CAPACITY 1000
 
@@ -304,7 +305,7 @@ Node *insert_before(DoublyLinkedList *list, Node *next_node, struct Data *data)
     return new_node;
 }
 
-Node *delete_by_value(DoublyLinkedList *list, int target_value)
+Node *delete_by_value(DoublyLinkedList *list, void *target_value)
 {
     if (!list || is_empty(list))
     {
@@ -312,59 +313,72 @@ Node *delete_by_value(DoublyLinkedList *list, int target_value)
         return NULL;
     }
 
+    int target = void_ptr_to_int(target_value);
     Node *current = list->head;
 
-    if ((int)(intptr_t)list->head->data->value == target_value)
+    // Special case: head node
+    if (current && void_ptr_to_int(current->data->value) == target)
     {
-        Node *node_to_delete = list->head;
-        Node *new_head = list->head->next;
+        Node *node_to_delete = current;
+        list->head = current->next;  // Move head to the next node
 
-        if (new_head)
+        if (list->head)
         {
-            new_head->previous = NULL;
+            list->head->previous = NULL;  // Set the previous of new head to NULL
         }
         else
         {
-            list->tail = NULL;
+            list->tail = NULL;  // If the list is empty now, update tail to NULL
         }
+
         free(node_to_delete->data);
         free(node_to_delete);
-        list->head = new_head;
         list->size--;
-        return new_head;
-    }
-
-    while (current && (int)(intptr_t)current->data->value != target_value)
-    {
-        current = current->next;
-    }
-
-    if (!current)
-    {
-        printf("Value %d not found in list\n", target_value);
         return list->head;
     }
 
+    // Traverse to find the node
+    while (current)
+    {
+        if (void_ptr_to_int(current->data->value) == target)
+        {
+            break;
+        }
+        current = current->next;
+    }
+
+    if (!current)  // If we reached the end and didn't find the value
+    {
+        printf("Value %d not found in list\n", target);
+        return list->head;
+    }
+
+    // Node to delete is found, unlink it from the list
     Node *node_to_delete = current;
 
-    node_to_delete->previous->next = node_to_delete->next;
+    if (node_to_delete->previous)
+    {
+        node_to_delete->previous->next = node_to_delete->next;  // Unlink from previous node
+    }
 
     if (node_to_delete->next)
     {
-        node_to_delete->next->previous = node_to_delete->previous;
+        node_to_delete->next->previous = node_to_delete->previous;  // Unlink from next node
     }
     else
     {
+        // If this was the tail node, update tail
         list->tail = node_to_delete->previous;
     }
 
     free(node_to_delete->data);
     free(node_to_delete);
     list->size--;
+
     return list->head;
 }
 
-Node *search_list(DoublyLinkedList *list, int target_value)
+Node *search_list(DoublyLinkedList *list, void *target_value)
 {
     if (!list)
     {
@@ -372,19 +386,21 @@ Node *search_list(DoublyLinkedList *list, int target_value)
         return NULL;
     }
 
+    int target = void_ptr_to_int(target_value);
     Node *current = list->head;
 
     while (current)
     {
-        if ((int)(intptr_t)current->data->value == target_value)
+        int val = void_ptr_to_int(current->data->value);
+        if (val == target)
         {
-            printf("Found node with value %d at address %p\n", target_value, (void *)current);
+            printf("Found node with value %d at address %p\n", val, (void *)current);
             return current;
         }
         current = current->next;
     }
 
-    printf("Value %d not found in the list\n", target_value);
+    printf("Value %d not found in the list\n", target);
     return NULL;
 }
 
@@ -400,7 +416,7 @@ void traverse_forward(DoublyLinkedList *list)
 
     while (current)
     {
-        printf("%d <-> ", current->data->value);
+        printf("%d <-> ", void_ptr_to_int(current->data->value));
         current = current->next;
     }
 
@@ -424,3 +440,51 @@ void free_list(DoublyLinkedList *list)
 
     free(list);
 }
+
+// int main() {
+//     // Create a new doubly linked list with a max capacity of 10
+//     DoublyLinkedList *list = create_list(10);
+
+//     // Check if the list was created successfully
+//     if (!list) {
+//         printf("Failed to create list\n");
+//         return -1;
+//     }
+
+//     // Create sample data for the nodes
+//     struct Data *data1 = (struct Data *)malloc(sizeof(struct Data));
+//     data1->value = int_to_void_ptr(10);
+
+//     struct Data *data2 = (struct Data *)malloc(sizeof(struct Data));
+//     data2->value = int_to_void_ptr(20);
+
+//     struct Data *data3 = (struct Data *)malloc(sizeof(struct Data));
+//     data3->value = int_to_void_ptr(30);
+
+//     // Insert nodes into the list
+//     insert_front(list, data1); // Insert 10 at the front
+//     insert_back(list, data2);  // Insert 20 at the back
+//     insert_by_position(list, 1, data3); // Insert 30 at position 1
+
+//     // Traverse the list
+//     printf("List after insertions:\n");
+//     traverse_forward(list);
+
+//     // Search for a node with value 20
+//     int target = 20;
+//     printf("\nSearching for value %d in the list...\n", target);
+//     search_list(list, int_to_void_ptr(target));
+
+//     // Delete a node with value 10
+//     printf("\nDeleting value 10 from the list...\n");
+//     delete_by_value(list, int_to_void_ptr(10));
+    
+//     // Traverse the list after deletion
+//     printf("\nList after deletion:\n");
+//     traverse_forward(list);
+
+//     // Free memory and clean up
+//     free_list(list);
+
+//     return 0;
+// }

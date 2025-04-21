@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "../include/hybrid_tree_api.h"
 
@@ -23,24 +24,31 @@
 #define CAPACiTY 1000
 
 // Core Functions
-struct HybridTree *create_hybrid_tree(int capacity)
+HybridTree *create_hybrid_tree()
 {
-    struct HybridTree *tree = (struct HybridTree *)malloc(sizeof(HybridTree));
-
+    HybridTree *tree = (HybridTree *)malloc(sizeof(HybridTree));
     if (!tree)
     {
-        fprintf(stderr, "Memory allocation failed for hybrid_tree.\n");
+        fprintf(stderr, "Memory allocation failed for HybridTree.\n");
         return NULL;
     }
 
-    tree->size = 0;
-    tree->capacity = (capacity > 0) ? capacity : 10; // Default capacity = 10 if invalid
-    tree->root = NULL;                               // Ensure tree starts empty
-
+    tree->root = NULL; // Initially the tree is empty (root is NULL)
+    tree->size = 0;    // No nodes initially
     return tree;
 }
 
-struct HybridNode *create_hybrid_node(int key)
+void *int_to_void_ptr(int key)
+{
+    return (void *)(intptr_t)key;
+}
+
+int void_ptr_to_int(void *ptr)
+{
+    return (int)(intptr_t)ptr;
+}
+
+HybridNode *create_hybrid_node(int key, void *value)
 {
     struct HybridNode *node = (struct HybridNode *)malloc(sizeof(struct HybridNode));
 
@@ -50,10 +58,12 @@ struct HybridNode *create_hybrid_node(int key)
         return NULL;
     }
 
-    node->key = key;
-    node->color = RED;      // New nodes are always RED in Red-Black Trees
-    node->height = 1;       // AVL trees start with height 1
-    node->access_count = 0; // No accesses yet
+    node->key = int_to_void_ptr(key); // Convert int to void pointer
+    node->value = value;              // ✅ Store the passed-in value
+
+    node->color = RED; // New nodes are RED
+    node->height = 1;  // AVL height
+    node->access_count = 0;
 
     node->parent = NULL;
     node->child[LEFT] = NULL;
@@ -89,7 +99,7 @@ int get_balance(struct HybridNode *node)
     return get_height(node->child[LEFT]) - get_height(node->child[RIGHT]);
 }
 
-struct HybridNode *avl_rotate_left(struct HybridNode *node)
+HybridNode *avl_rotate_left(HybridNode *node)
 {
     struct HybridNode *new_position = node->child[RIGHT];
 
@@ -102,7 +112,7 @@ struct HybridNode *avl_rotate_left(struct HybridNode *node)
     return new_position; // Return the new root of the subtree
 }
 
-struct HybridNode *avl_rotate_right(struct HybridNode *node)
+HybridNode *avl_rotate_right(HybridNode *node)
 {
     struct HybridNode *new_position = node->child[LEFT];
 
@@ -115,7 +125,7 @@ struct HybridNode *avl_rotate_right(struct HybridNode *node)
     return new_position; // Return the new root of the subtree
 }
 
-struct HybridNode *rebalance_if_needed(struct HybridTree *tree, struct HybridNode *node)
+HybridNode *rebalance_if_needed(HybridTree *tree, HybridNode *node)
 {
     int balance = get_balance(node);
 
@@ -156,7 +166,7 @@ struct HybridNode *rebalance_if_needed(struct HybridTree *tree, struct HybridNod
     return node; // Return the potentially rebalanced node
 }
 
-void color_flip(struct HybridNode *node)
+void color_flip(HybridNode *node)
 {
     if (!node)
         return; // Ensure node is not NULL
@@ -174,14 +184,14 @@ void color_flip(struct HybridNode *node)
     }
 }
 
-void swap_keys(struct HybridNode *a, struct HybridNode *b)
+void swap_keys(HybridNode *a, HybridNode *b)
 {
-    int temp = a->key;
+    int temp = void_ptr_to_int(a->key);
     a->key = b->key;
-    b->key = temp;
+    b->key = int_to_void_ptr(temp);
 }
 
-struct HybridNode *rotate(struct HybridTree *tree, struct HybridNode *node, Direction dir)
+HybridNode *rotate(struct HybridTree *tree, HybridNode *node, Direction dir)
 {
     struct HybridNode *new_root = node->child[!dir]; // Get the child to rotate up
 
@@ -223,7 +233,7 @@ struct HybridNode *rotate(struct HybridTree *tree, struct HybridNode *node, Dire
     return new_root; // Return the new root after the rotation
 }
 
-struct HybridNode *double_rotate(struct HybridTree *tree, struct HybridNode *node, Direction dir)
+HybridNode *double_rotate(HybridTree *tree, HybridNode *node, Direction dir)
 {
     // Perform the first rotation in the opposite direction
     node->child[!dir] = rotate(tree, node->child[!dir], (Direction)!dir);
@@ -231,7 +241,7 @@ struct HybridNode *double_rotate(struct HybridTree *tree, struct HybridNode *nod
     return rotate(tree, node, dir);
 }
 
-struct HybridNode *rb_insert_fixup(struct HybridTree *tree, struct HybridNode *node, Direction dir)
+HybridNode *rb_insert_fixup(HybridTree *tree, HybridNode *node, Direction dir)
 {
     while (node->parent && node->parent->color == RED)
     {
@@ -274,62 +284,65 @@ struct HybridNode *rb_insert_fixup(struct HybridTree *tree, struct HybridNode *n
 }
 
 // Function definition in implementation file (hybrid_tree_api.c)
-struct HybridNode *insert_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok)
+HybridNode *insert_hybrid(HybridTree *tree, HybridNode *node, int key, void *value, Direction dir, bool *fixup_ok)
 {
-    // Base case: When we find an empty spot (NULL node), insert the new node
     if (node == NULL)
     {
-        struct HybridNode *new_node = create_hybrid_node(key);
+        *fixup_ok = true;
         tree->size++;
+        HybridNode *new_node = create_hybrid_node(key, value);
         return new_node;
     }
 
-    // Traverse the tree based on the key comparison
-    if (key < node->key)
+    int cmp = key - void_ptr_to_int(node->key);
+
+    if (cmp < 0)
     {
-        // Go to the left child
-        node->child[LEFT] = insert_hybrid(tree, node->child[LEFT], key, LEFT, fixup_ok);
+        HybridNode *inserted = insert_hybrid(tree, node->child[LEFT], key, value, LEFT, fixup_ok);
+        node->child[LEFT] = inserted;
+        if (inserted)
+            inserted->parent = node;
     }
-    else if (key > node->key)
+    else if (cmp > 0)
     {
-        // Go to the right child
-        node->child[RIGHT] = insert_hybrid(tree, node->child[RIGHT], key, RIGHT, fixup_ok);
+        HybridNode *inserted = insert_hybrid(tree, node->child[RIGHT], key, value, RIGHT, fixup_ok);
+        node->child[RIGHT] = inserted;
+        if (inserted)
+            inserted->parent = node;
     }
     else
     {
-        // Duplicate key found, return without modifying the tree
+        // Duplicate key — do not insert again
+        *fixup_ok = false;
         return node;
     }
 
-    // After insertion, first apply AVL balancing
+    // AVL balancing
     node = rebalance_if_needed(tree, node);
 
-    // Then apply Red-Black tree balancing (fixup)
+    // Red-Black fix-up
     node = rb_insert_fixup(tree, node, dir);
 
     return node;
 }
 
-void insert_hybrid_public(struct HybridTree *tree, int key, bool *inserted)
+void insert_hybrid_public(HybridTree *tree, int key, void *value, bool *inserted)
 {
-    if (tree == NULL || inserted == NULL)
+    if (!tree || !inserted)
         return;
 
-    Direction dir = LEFT; // direction placeholder
+    Direction dir = LEFT; // Just for initial fixup
     bool fixup_ok = false;
 
-    // Insert the key into the tree and set the root as necessary
-    tree->root = insert_hybrid(tree, tree->root, key, dir, &fixup_ok);
+    tree->root = insert_hybrid(tree, tree->root, key, value, dir, &fixup_ok);
 
-    // Set the inserted flag based on whether the key was successfully inserted
     *inserted = fixup_ok;
 
-    // Ensure the root is always black
     if (tree->root)
         tree->root->color = BLACK;
 }
 
-struct HybridNode *rb_delete_fixup(struct HybridTree *tree, struct HybridNode *node, bool dir, bool *ok)
+HybridNode *rb_delete_fixup(HybridTree *tree, HybridNode *node, bool dir, bool *ok)
 {
     struct HybridNode *parent = node;
     struct HybridNode *sibling = node->child[!dir];
@@ -382,7 +395,7 @@ struct HybridNode *rb_delete_fixup(struct HybridTree *tree, struct HybridNode *n
     return node;
 }
 
-struct HybridNode *find_minimum(struct HybridNode *node)
+HybridNode *find_minimum(HybridNode *node)
 {
     while (node->child[0] != NULL)
     {
@@ -392,7 +405,7 @@ struct HybridNode *find_minimum(struct HybridNode *node)
     return node;
 }
 
-struct HybridNode *find_maximum(struct HybridNode *node)
+HybridNode *find_maximum(HybridNode *node)
 {
     while (node->child[1] != NULL)
     {
@@ -402,17 +415,17 @@ struct HybridNode *find_maximum(struct HybridNode *node)
     return node;
 }
 
-struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *node, int key, Direction dir, bool *fixup_ok)
+HybridNode *delete_hybrid(HybridTree *tree, HybridNode *node, int key, Direction dir, bool *fixup_ok)
 {
     if (node == NULL)
         return NULL;
 
-    if (key < node->key)
+    if (key < void_ptr_to_int(node->key))
     {
         dir = LEFT;
         node->child[LEFT] = delete_hybrid(tree, node->child[LEFT], key, dir, fixup_ok);
     }
-    else if (key > node->key)
+    else if (key > void_ptr_to_int(node->key))
     {
         dir = RIGHT;
         node->child[RIGHT] = delete_hybrid(tree, node->child[RIGHT], key, dir, fixup_ok);
@@ -463,39 +476,42 @@ struct HybridNode *delete_hybrid(struct HybridTree *tree, struct HybridNode *nod
     return node;
 }
 
-void delete_from_hybrid_tree(struct HybridTree *tree, int key)
+void delete_from_hybrid_tree(HybridTree *tree, int key)
 {
     bool fixup_ok = false;
     tree->root = delete_hybrid(tree, tree->root, key, LEFT, &fixup_ok);
 }
 
-struct HybridNode *search_hybrid(struct HybridTree *tree, int key)
+// hybrid_tree_api.h
+HybridNode *search_hybrid(HybridTree *tree, void *key)
 {
-    if (!tree || !tree->root)
-        return NULL; // Tree is empty, key not found
+    if (!tree || !key)
+        return NULL;
 
-    struct HybridNode *node = tree->root; // Start from the root
+    HybridNode *node = tree->root;
+    int search_key = void_ptr_to_int(key); // Convert void * to int
 
     while (node)
     {
-        if (key == node->key)
-            return node; // Key found
+        int node_key = void_ptr_to_int(node->key); // Also convert stored key
+        if (search_key == node_key)
+            return node;
 
-        if (key < node->key)
-            node = node->child[LEFT]; // Go left
+        if (search_key < node_key)
+            node = node->child[LEFT];
         else
-            node = node->child[RIGHT]; // Go right
+            node = node->child[RIGHT];
     }
 
-    return NULL; // Key not found
+    return NULL;
 }
 
-bool hybrid_tree_is_full(struct HybridTree *tree)
+bool hybrid_tree_is_full(HybridTree *tree)
 {
     return tree->size >= tree->capacity;
 }
 
-struct HybridNode *find_predecessor(struct HybridNode *node)
+HybridNode *find_predecessor(HybridNode *node)
 {
     if (node->child[0])
     {
@@ -513,7 +529,7 @@ struct HybridNode *find_predecessor(struct HybridNode *node)
     return parent;
 }
 
-struct HybridNode *find_successor(struct HybridNode *node)
+HybridNode *find_successor(HybridNode *node)
 {
     if (node->child[1])
     {
@@ -531,33 +547,33 @@ struct HybridNode *find_successor(struct HybridNode *node)
     return parent;
 }
 
-void increment_access_count(struct HybridNode *node)
+void increment_access_count(HybridNode *node)
 {
     if (node != NULL)
     {
         node->access_count++;
 
-        printf("Node with key %d has been accessed %d times.\n", node->key, node->access_count);
+        printf("Node with key %d has been accessed %d times.\n", void_ptr_to_int(node->key), node->access_count);
     }
 }
 
-void inorder_traversal(struct HybridNode *node)
+void inorder_traversal(HybridNode *node)
 {
     if (!node)
         return;
 
     inorder_traversal(node->child[LEFT]);
-    printf("%d ", node->key);
+    printf("%d ", void_ptr_to_int(node->key));
     inorder_traversal(node->child[RIGHT]);
 }
 
-void print_hybrid_tree(struct HybridNode *root, int level)
+void print_hybrid_tree(HybridNode *root, int level)
 {
     inorder_traversal(root);
     printf("\n");
 }
 
-void print_tree(struct HybridNode *root, int space)
+void print_tree(HybridNode *root, int space)
 {
     if (root == NULL)
         return;
@@ -568,12 +584,12 @@ void print_tree(struct HybridNode *root, int space)
 
     for (int i = 5; i < space; i++)
         printf(" ");
-    printf("%d (%s)\n", root->key, root->color == RED ? "R" : "B");
+    printf("%d (%s)\n", void_ptr_to_int(root->key), root->color == RED ? "R" : "B");
 
     print_tree(root->child[LEFT], space);
 }
 
-void destroy_hybrid_tree(struct HybridTree *tree)
+void destroy_hybrid_tree(HybridTree *tree)
 {
     if (!tree)
         return;
@@ -585,7 +601,7 @@ void destroy_hybrid_tree(struct HybridTree *tree)
     free(tree);
 }
 
-void free_hybrid_tree(struct HybridNode *node, void (*free_key)(void *))
+void free_hybrid_tree(HybridNode *node, void (*free_key)(void *))
 {
     if (!node)
         return;
@@ -594,25 +610,25 @@ void free_hybrid_tree(struct HybridNode *node, void (*free_key)(void *))
     free_hybrid_tree(node->child[RIGHT], free_key);
 
     if (free_key)
-        free_key((void *)&node->key);
-
+        free_key(node->key);
     free(node);
 }
 
-struct HybridNode *tree_map_insert_hybrid(struct HashMapWithTree *map, struct HybridTree *tree, int key) {
-    if (!map) return NULL;
+HybridNode *tree_map_insert_hybrid(HashMapWithTree *map, HybridTree *tree, int key, void *value)
+{
+    if (!map)
+        return NULL;
 
     unsigned int index = hash(key, map->capacity);
     bool was_inserted = false;
 
-    insert_hybrid_public(map->buckets[index], key, &was_inserted);
+    insert_hybrid_public(map->buckets[index], key, value, &was_inserted);
 
-    // Return the inserted node by searching for it
-    return search_hybrid(map->buckets[index], key);
+    return search_hybrid(map->buckets[index], int_to_void_ptr(key));
 }
 
 // Deletes a TreeMap key from the HybridTree
-void tree_map_delete_hybrid(TreeMap *map, struct HybridTree *tree, int key)
+void tree_map_delete_hybrid(HashMapWithTree *map, HybridTree *tree, int key)
 {
     if (!tree || !tree->root)
         return;
@@ -623,7 +639,7 @@ void tree_map_delete_hybrid(TreeMap *map, struct HybridTree *tree, int key)
 }
 
 // Searches for a key in the TreeMap via the HybridTree
-struct HybridNode *tree_map_search_hybrid(TreeMap *map, struct HybridTree *tree, int key)
+HybridNode *tree_map_search_hybrid(HashMapWithTree *map, HybridTree *tree, int key)
 {
     if (!tree || !tree->root)
         return NULL;
@@ -632,9 +648,9 @@ struct HybridNode *tree_map_search_hybrid(TreeMap *map, struct HybridTree *tree,
 
     while (current)
     {
-        if (key == current->key)
+        if (key == void_ptr_to_int(current->key))
             return current;
-        else if (key < current->key)
+        else if (key < void_ptr_to_int(current->key))
             current = current->child[LEFT];
         else
             current = current->child[RIGHT];
@@ -644,45 +660,48 @@ struct HybridNode *tree_map_search_hybrid(TreeMap *map, struct HybridTree *tree,
 }
 
 // Visit left -> self -> right
-void range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result)
-{
-    if (!node)
-    {
-        return; // Early exit if node is null (empty tree or reached a leaf)
-    }
-
-    // Call in-order range query recursively
-    in_order_range_query(node, low, high, result);
-}
-
-void in_order_range_query(struct HybridNode *node, int low, int high, struct DynamicArray *result)
+void range_query(HybridNode *node, int low, int high, DynamicArray *result)
 {
     if (!node)
         return;
 
-    // Traverse left subtree
-    in_order_range_query(node->child[0], low, high, result);
+    // Convert node's key to integer (adjust if the key is of different type)
+    int key = void_ptr_to_int(node->key);
 
-    // Check if the current node's key is within the range
-    if (node->key >= low && node->key <= high)
+    // Traverse left subtree if there's potential for keys in range
+    if (key > low)
+        range_query(node->child[0], low, high, result);
+
+    // Include current node if within range
+    if (key >= low && key <= high)
     {
-        insert_into_dynamic_array(result, node); // Insert the node, not just the key
+        insert_into_dynamic_array(result, node); // Ensure this correctly adds the node to the result
     }
 
-    // Traverse right subtree
-    in_order_range_query(node->child[1], low, high, result);
+    // Traverse right subtree if there's potential for keys in range
+    if (key < high)
+        range_query(node->child[1], low, high, result);
 }
 
-void treemap_range_query(struct HybridTree *tree, int low, int high)
+void treemap_range_query(HybridTree *tree, int low, int high)
 {
-    struct DynamicArray *result = create_dynamic_array(100); // initial capacity
+    if (!tree)
+        return;
+
+    DynamicArray *result = create_dynamic_array(100);
+    if (!result)
+    {
+        fprintf(stderr, "Failed to allocate dynamic array for range query.\n");
+        return;
+    }
+
     range_query(tree->root, low, high, result);
 
     printf("Range query result: Keys in range [%d, %d]: ", low, high);
     for (int i = 0; i < result->size; i++)
     {
-        struct HybridNode *node = (struct HybridNode *)result->items[i];
-        printf("%d ", node->key);
+        HybridNode *node = (HybridNode *)result->items[i];
+        printf("%d ", void_ptr_to_int(node->key));
     }
     printf("\n");
 
@@ -702,11 +721,11 @@ void treemap_range_query(struct HybridTree *tree, int low, int high)
 //     // Insert some test values
 //     printf("Inserting values into the tree...\n");
 //     bool inserted = false;
-//     insert_hybrid_public(tree, 5, &inserted);
-//     insert_hybrid_public(tree, 2, &inserted);
-//     insert_hybrid_public(tree, 8, &inserted);
-//     insert_hybrid_public(tree, 3, &inserted);
-//     insert_hybrid_public(tree, 9, &inserted);
+//     insert_hybrid_public(tree, 5, int_to_void_ptr(5), &inserted);
+//     insert_hybrid_public(tree, 2, int_to_void_ptr(2), &inserted);
+//     insert_hybrid_public(tree, 8, int_to_void_ptr(8), &inserted);
+//     insert_hybrid_public(tree, 3, int_to_void_ptr(3), &inserted);
+//     insert_hybrid_public(tree, 9, int_to_void_ptr(9), &inserted);
 
 //     // Print the tree structure
 //     printf("\nTree structure:\n");
@@ -714,12 +733,16 @@ void treemap_range_query(struct HybridTree *tree, int low, int high)
 
 //     // Search for a value
 //     printf("\nSearching for key 8...\n");
-//     struct HybridNode *found = search_hybrid(tree, 8);
+//     HybridNode *found = search_hybrid(tree, int_to_void_ptr(8));
 //     if (found)
 //     {
 //         printf("Found node with key %d (color: %s)\n",
-//                found->key,
+//                void_ptr_to_int(found->key),
 //                found->color == RED ? "RED" : "BLACK");
+//     }
+//     else
+//     {
+//         printf("Key 8 not found.\n");
 //     }
 
 //     // Delete a value
@@ -730,15 +753,21 @@ void treemap_range_query(struct HybridTree *tree, int low, int high)
 //     printf("\nTree after deletion:\n");
 //     print_tree(tree->root, 0);
 
-//     DynamicArray *result = create_dynamic_array(100);
-
+//     // Perform a range query
+//     printf("\nRange query from 3 to 8:\n");
+//     DynamicArray *result = create_dynamic_array(10);
 //     treemap_range_query(tree, 3, 8);
 
+//     for (int i = 0; i < result->size; ++i)
+//     {
+//         void *item = get_from_dynamic_array(result, i);
+//         printf("%d ", void_ptr_to_int(item));
+//     }
 //     printf("\n");
 
-//     free_dynamic_array(result);
-
 //     // Clean up
-//     destroy_hybrid_tree(tree);
+//     // free_dynamic_array(result);
+//     // destroy_hybrid_tree(tree);
+
 //     return 0;
 // }
