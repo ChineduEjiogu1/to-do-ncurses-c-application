@@ -9,6 +9,7 @@
 typedef struct LRUNode {
     void *key;
     void *value;
+    struct Node *list_node; // Pointer to node in DLL
 } LRUNode;
 
 typedef struct LRUCache {
@@ -21,22 +22,11 @@ typedef struct LRUCache {
 
 // Core Functions
 LRUCache *create_lru_cache(int capacity);
-void insert_new(LRUCache *cache, void *key, void *value);
-bool lru_contains(LRUCache *cache, void *key);
-
-void evict_lru(LRUCache *cache);
-void insert_new(LRUCache *cache, void *key, void *value);
-void *lru_get(LRUCache *cache, void *key);
-
-void *lru_get(LRUCache *cache, void *key);
-void lru_put(LRUCache *cache, void *key, void *value);
-
-bool lru_contains(LRUCache *cache, void *key);
-int lru_size(LRUCache *cache);
-void lru_print(LRUCache *cache);
+LRUNode *create_lru_node(void *key, void *value);
+void *lru_cache_get(LRUCache *cache, int key);
+void lru_cache_put(LRUCache *cache, int key, int value);
 bool is_full_lru(LRUCache *cache);
 bool is_empty_lru(LRUCache *cache);
 int list_size_lru(LRUCache *cache);
-
 void free_lru_cache(LRUCache *cache);
 #endif // LRU_CACHE_H

@@ -57,20 +57,8 @@ bool tree_map_insert(HashMapWithTree *map, int key, void *value)
         return false;
 
     unsigned int index = hash(key, map->capacity);
-    printf("Inserting key %d into bucket %u...\n", key, index);
-
     bool inserted = false;
     insert_hybrid_public(map->buckets[index], key, value, &inserted);
-
-    if (inserted)
-    {
-        printf("Key %d inserted successfully into bucket %u.\n", key, index);
-    }
-    else
-    {
-        printf("Failed to insert key %d into bucket %u.\n", key, index);
-    }
-
     return inserted;
 }
 
@@ -84,26 +72,14 @@ bool tree_map_delete(HashMapWithTree *map, int key)
     }
 
     unsigned int index = hash(key, map->capacity);
-    printf("Deleting key %d from bucket %u...\n", key, index);
-
     HybridTree *tree = map->buckets[index];
     if (!tree || !tree->root)
     {
-        printf("Tree at bucket %u is empty, nothing to delete.\n", index);
         return false;
     }
 
     delete_from_hybrid_tree(tree, key);
-    if (!tree_map_search(map, key))
-    {
-        printf("Key %d deleted successfully from bucket %u.\n", key, index);
-        return true;
-    }
-    else
-    {
-        printf("Failed to delete key %d from bucket %u.\n", key, index);
-        return false;
-    }
+    return !tree_map_search(map, key);
 }
 
 // Search for a key in the tree map
@@ -112,23 +88,11 @@ struct HybridNode *tree_map_search(HashMapWithTree *map, int key)
     if (!map)
     {
         fprintf(stderr, "Error: HashMapWithTree is NULL.\n");
-        return false; // Return false if map is NULL
+        return NULL;
     }
 
     unsigned int index = hash(key, map->capacity);
-    printf("Searching for key %d in bucket %u...\n", key, index);
-
-    HybridNode *node = search_hybrid(map->buckets[index], int_to_void_ptr(key));
-    if (node)
-    {
-        printf("Key %d found in bucket %u.\n", key, index);
-        return node; // Return true if the key is found
-    }
-    else
-    {
-        printf("Key %d not found in bucket %u.\n", key, index);
-        return node; // Return false if the key is not found
-    }
+    return search_hybrid(map->buckets[index], int_to_void_ptr(key));
 }
 
 // Print the TreeMap
@@ -213,7 +177,6 @@ void print_range_query_result(DynamicArray *result)
 void perform_range_query_and_print(HybridTree *tree, int low, int high)
 {
     DynamicArray *result = create_dynamic_array(10);
-    printf("Range query [%d, %d]:\n", low, high);
     range_query(tree->root, low, high, result);
     print_range_query_result(result);
     free_dynamic_array(result);

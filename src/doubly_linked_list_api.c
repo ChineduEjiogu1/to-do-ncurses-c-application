@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../include/doubly_linked_list.h"
+#include "../include/lru_cache_api.h"
 #include "../include/tree_map_api.h"
 
 #define MAX_CAPACITY 1000
@@ -307,74 +308,74 @@ Node *insert_before(DoublyLinkedList *list, Node *next_node, struct Data *data)
 
 Node *delete_by_value(DoublyLinkedList *list, void *target_value)
 {
-    if (!list || is_empty(list))
+    if (!list)
     {
-        printf("List is empty or invalid\n");
+        printf("delete_by_value: list is NULL\n");
         return NULL;
     }
 
-    int target = void_ptr_to_int(target_value);
-    Node *current = list->head;
-
-    // Special case: head node
-    if (current && void_ptr_to_int(current->data->value) == target)
+    if (is_empty(list))
     {
-        Node *node_to_delete = current;
-        list->head = current->next;  // Move head to the next node
+        printf("delete_by_value: list is empty\n");
+        return NULL;
+    }
 
-        if (list->head)
-        {
-            list->head->previous = NULL;  // Set the previous of new head to NULL
-        }
-        else
-        {
-            list->tail = NULL;  // If the list is empty now, update tail to NULL
-        }
-
-        free(node_to_delete->data);
-        free(node_to_delete);
-        list->size--;
+    if (!target_value)
+    {
+        printf("delete_by_value: target_value is NULL\n");
         return list->head;
     }
 
-    // Traverse to find the node
+    Node *current = list->head;
+
     while (current)
     {
-        if (void_ptr_to_int(current->data->value) == target)
+        // Remove or comment out the printf line below to stop printing pointers
+        // printf("Visiting node: %p, data: %p, value: %p\n",
+        //        current, current->data, current->data ? current->data->value : NULL);
+
+        if (current->data && current->data->value == target_value)
         {
-            break;
+            Node *node_to_delete = current;
+
+            if (node_to_delete == list->head)
+            {
+                list->head = node_to_delete->next;
+                if (list->head)
+                    list->head->previous = NULL;
+                else
+                    list->tail = NULL;
+            }
+            else if (node_to_delete == list->tail)
+            {
+                list->tail = node_to_delete->previous;
+                if (list->tail)
+                    list->tail->next = NULL;
+            }
+            else
+            {
+                if (node_to_delete->previous)
+                    node_to_delete->previous->next = node_to_delete->next;
+                if (node_to_delete->next)
+                    node_to_delete->next->previous = node_to_delete->previous;
+            }
+
+            printf("Deleted node with key=%d from DLL\n",
+                   void_ptr_to_int(((LRUNode *)target_value)->key));
+
+            if (node_to_delete->data)
+                free(node_to_delete->data);
+            free(node_to_delete);
+            list->size--;
+
+            return list->head;
         }
+
         current = current->next;
     }
 
-    if (!current)  // If we reached the end and didn't find the value
-    {
-        printf("Value %d not found in list\n", target);
-        return list->head;
-    }
-
-    // Node to delete is found, unlink it from the list
-    Node *node_to_delete = current;
-
-    if (node_to_delete->previous)
-    {
-        node_to_delete->previous->next = node_to_delete->next;  // Unlink from previous node
-    }
-
-    if (node_to_delete->next)
-    {
-        node_to_delete->next->previous = node_to_delete->previous;  // Unlink from next node
-    }
-    else
-    {
-        // If this was the tail node, update tail
-        list->tail = node_to_delete->previous;
-    }
-
-    free(node_to_delete->data);
-    free(node_to_delete);
-    list->size--;
-
+    // printf("Value with key=%d not found in DLL\n",
+    //        void_ptr_to_int(((LRUNode *)target_value)->key));
     return list->head;
 }
 
